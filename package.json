@@ -1,0 +1,79 @@
+{
+  "name": "flowsense",
+  "version": "1.0.0",
+  "description": "FlowSense by TechMinds: desktop monitor for the Smart Drainage Alert and Blockage Prediction System (ESP32-S3)",
+  "main": "main.js",
+  "author": {
+    "name": "Smart Drainage Alert team",
+    "email": "arjunganeshs.mct2026@citchennai.net"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert",
+  "scripts": {
+    "postinstall": "node scripts/copy-fonts.js",
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@fontsource/jetbrains-mono": "^5.0.0",
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.techminds.flowsense",
+    "productName": "FlowSense",
+    "copyright": "Copyright (c) 2026 TechMinds",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "build/icon.png"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "FlowSense-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "FlowSense-Portable-${version}.${ext}"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "artifactName": "FlowSense-${version}-linux.${ext}",
+      "executableName": "flowsense"
+    },
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>FlowSense</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'">
+<style>
+@font-face{font-family:"JetBrains Mono";font-weight:400;src:url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:600;src:url("fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url("fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2")}
+:root{--bg:#e0d9d3;--sd:#bdb3ac;--sl:#f4f0ea;--tx:#6b625b;--mu:#948a82;--ac:#fc8068}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:"JetBrains Mono","Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;-webkit-user-select:none;user-select:none}
+.scene{position:absolute;inset:0 0 70px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0}
+#a{animation:in .8s .2s ease-out forwards,out .5s 2.6s ease-in forwards}
+#b{animation:in .7s 3.1s ease-out forwards}
+#a img{height:200px;animation:pop .8s .2s cubic-bezier(.3,1.4,.5,1) both}
+#a p{margin:0;font-size:.95rem;letter-spacing:.6em;text-indent:.6em;opacity:0;animation:in .7s 1.3s ease-out forwards}
+#b img{height:150px;animation:hop .9s 3.1s cubic-bezier(.3,1.6,.5,1) both}
+#b h1{margin:0;font-size:2.6rem;letter-spacing:.18em;text-indent:.18em;color:var(--tx)}
+#b h1 span{color:var(--ac)}
+#b p{margin:0;font-size:.8rem;color:var(--mu);letter-spacing:.08em}
+.bar{position:absolute;left:120px;right:120px;bottom:34px;height:14px;border-radius:99px;box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl)}
+.bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--ac);box-shadow:2px 2px 4px var(--sd);animation:fill 4.2s .1s ease-in-out forwards}
+@keyframes in{from{opacity:0}to{opacity:1}}
+@keyframes out{to{opacity:0;transform:scale(.96)}}
+@keyframes pop{from{transform:scale(.85)}to{transform:scale(1)}}
+@keyframes hop{0%{transform:translateY(40px) scale(.9)}60%{transform:translateY(-14px)}100%{transform:none}}
+@keyframes fill{to{width:100%}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-delay:0s!important}#b{animation-delay:2.5s!important}}
+</style></head>
+<body>
+<div class="scene" id="a"><img src="img/techminds.png" alt="TechMinds"><p>PRESENTS</p></div>
+<div class="scene" id="b"><img src="img/drip-full.png" alt="Drip"><h1>Flow<span>Sense</span></h1><p>drain blockage prediction</p></div>
+<div class="bar"><i></i></div>
+</body></html>

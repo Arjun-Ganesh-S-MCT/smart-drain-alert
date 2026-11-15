@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>FlowSense setup</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'">
+<style>
+@font-face{font-family:"JetBrains Mono";font-weight:400;src:url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:600;src:url("fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url("fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2")}
+:root{--bg:#e0d9d3;--sd:#bdb3ac;--sl:#f4f0ea;--tx:#6b625b;--mu:#948a82;--ac:#fc8068;--ok:#6aa381;--wn:#f0903f}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:"JetBrains Mono","Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;font-size:14px;padding:26px}
+.head{display:flex;gap:16px;align-items:center;margin-bottom:22px}.head img{height:70px}
+h1{margin:0;font-size:1.25rem}.sub{color:var(--mu);font-size:.8rem;line-height:1.5;margin-top:4px}
+.card{background:var(--bg);border-radius:26px;box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl);padding:20px}
+.steps{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+.steps li{display:flex;gap:14px;align-items:flex-start;line-height:1.45}
+.ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.8rem;color:#fff;box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
+.run .ic{background:var(--bg);box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl)}
+.run .ic::after{content:"";width:12px;height:12px;border-radius:50%;border:3px solid var(--ac);border-right-color:transparent;animation:sp .8s linear infinite}
+.ok .ic{background:var(--ok)}.ok .ic::after{content:"✓"}
+.warn .ic{background:var(--wn)}.warn .ic::after{content:"!"}
+.lbl{font-weight:600}.txt{color:var(--mu);font-size:.8rem}
+.bar{height:12px;border-radius:99px;margin:20px 0 6px;box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl)}
+.bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--ac);transition:width .4s}
+.row{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+button{font:inherit;color:var(--tx);font-weight:600;background:var(--bg);border:0;border-radius:99px;padding:10px 20px;cursor:pointer;box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl)}
+button:active{box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
+button.main{background:var(--ac);color:#fff}button:disabled{opacity:.45;cursor:default}
+.hide{display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style></head>
+<body>
+<div class="head"><img src="img/drip-full.png" alt="Drip"><div><h1>First-time setup</h1><div class="sub">Everything FlowSense needs is already inside the app. This check makes sure your computer lets it talk to the ESP32-S3.</div></div></div>
+<div class="card">
+  <ul class="steps" id="steps"></ul>
+  <div class="bar"><i id="pg"></i></div>
+  <div class="sub" id="note"></div>
+  <div class="row">
+    <button id="bGrant" class="hide">Allow serial access</button>
+    <button id="bCp" class="hide">CP210x driver page</button>
+    <button id="bCh" class="hide">CH340 driver page</button>
+    <button id="bDone" class="main" disabled>Finish</button>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);let n=0;
+window.flowsense.onStep(d=>{let li=$('s-'+d.id);if(!li){li=document.createElement('li');li.id='s-'+d.id;li.innerHTML='<span class="ic"></span><div><div class="lbl"></div><div class="txt"></div></div>';$('steps').appendChild(li);n++}
+  li.className=d.state;li.querySelector(d.state==='run'?'.lbl':'.txt').textContent=d.text;if(d.state==='run')li.querySelector('.txt').textContent='';
+  if(d.state!=='run'){li.querySelector('.lbl').textContent=({sys:'Computer',app:'App files',ports:'Serial devices',perm:'Serial access',drv:'USB drivers',final:'Done'})[d.id]||d.id;$('pg').style.width=Math.min(100,n*100/(window._total||5))+'%'}});
+window._total=document.documentElement.dataset.total||5;
+window.flowsense.runSetup().then(r=>{$('pg').style.width='100%';$('bDone').disabled=false;
+  if(r.needsGroup){$('bGrant').classList.remove('hide');$('note').textContent='Press Allow serial access, enter your password, then log out and back in once.'}
+  if(r.driverIssues.length){$('bCp').classList.remove('hide');$('bCh').classList.remove('hide');$('note').textContent='Install the driver that matches your board (the chip is printed on the USB bridge). These pages need internet.'}
+  if(!r.needsGroup&&!r.driverIssues.length)$('note').textContent='All good. You are ready to connect your board.'});
+$('bGrant').onclick=async()=>{$('bGrant').disabled=true;const g=await window.flowsense.grantSerial();$('note').textContent=g.ok?'Done. Log out and back in so Linux applies it.':'Could not change it: '+g.error;$('bGrant').disabled=false};
+$('bCp').onclick=()=>window.flowsense.openLink('cp210x');$('bCh').onclick=()=>window.flowsense.openLink('ch340');
+$('bDone').onclick=()=>window.flowsense.finish();
+</script></body></html>

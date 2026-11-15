@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowSense</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src ws: wss:">
+<style>
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;src:url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:600;font-style:normal;src:url("fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:700;font-style:normal;src:url("fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2")}
+:root{--bg:#e0d9d3;--sd:#bdb3ac;--sl:#f4f0ea;--tx:#6b625b;--mu:#948a82;--ok:#6aa381;--p1:#e0a63c;--p2:#f0903f;--p3:#d6483f;--p4:#a8212e;--ac:#fc8068}
+:root.dark{--bg:#2f2a27;--sd:#1f1b19;--sl:#3f3935;--tx:#e6ded8;--mu:#a1958c;--ac:#ff8f78}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:"JetBrains Mono","Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;padding:22px;font-size:14px}
+h1{font-size:1.3rem;margin:0;font-weight:700;color:var(--tx)}
+h2{font-size:1rem;margin:0 0 14px;color:var(--ac)}
+.sub{color:var(--mu);font-size:.8rem}
+header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:22px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.raised{background:var(--bg);border-radius:26px;box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl)}
+.inset{background:var(--bg);border-radius:14px;box-shadow:inset 5px 5px 10px var(--sd),inset -5px -5px 10px var(--sl)}
+.card{padding:20px}
+.grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:24px}
+.wide{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));margin-bottom:24px}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+button{background:var(--bg);border:0;border-radius:999px;padding:10px 20px;cursor:pointer;font-weight:600;box-shadow:6px 6px 12px var(--sd),-6px -6px 12px var(--sl)}
+button:hover{color:var(--ac)}button:active,button.on{box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+input[type=number],input[type=text],input[type=password],select{width:100%;background:var(--bg);border:0;border-radius:12px;padding:9px 12px;box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
+input[type=range]{accent-color:var(--ac);width:110px}
+label{display:block;font-size:.78rem;color:var(--mu);margin-bottom:6px}
+.stat{font-size:1.9rem;font-weight:700;margin:6px 0 2px;color:var(--tx)}.unit{font-size:.8rem;color:var(--mu);font-weight:400}
+.k{}.k label::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ac);box-shadow:inset 2px 2px 3px rgba(0,0,0,.25);margin-right:8px}
+.c1{--k:#fc8068}.c2{--k:#e8761f}.c3{--k:var(--ac)}.c4{--k:var(--ac)}
+#bConn,#bConn:hover{background:var(--ac);color:#fff}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px;background:var(--mu)}
+.status{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.orb{width:100px;height:100px;border-radius:50%;display:grid;place-items:center;flex:none}
+.orb i{width:48px;height:48px;border-radius:50%;background:var(--mu);box-shadow:4px 4px 8px var(--sd),-4px -4px 8px var(--sl)}
+.cond{font-size:1.5rem;font-weight:700}
+.pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.78rem;margin:8px 8px 0 0}
+canvas{width:100%;height:190px;display:block}
+.log{max-height:300px;overflow:auto;display:grid;gap:12px;padding:8px}
+.inc{padding:10px 14px;font-size:.8rem;line-height:1.45}
+.set{display:flex;flex-wrap:wrap;gap:34px;justify-content:space-around;padding:10px 0}
+.dialw{display:flex;flex-direction:column;align-items:center;gap:8px;width:150px;text-align:center}
+.dial{width:130px;height:130px;border-radius:50%;position:relative;background:var(--bg);box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl);touch-action:none;cursor:grab;margin-bottom:6px}
+.dial::before{content:"";position:absolute;inset:26px;border-radius:50%;box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
+.dial svg{position:absolute;inset:0;width:100%;height:100%}
+.knob{position:absolute;inset:34px;border-radius:50%;background:var(--bg);box-shadow:5px 5px 10px var(--sd),-5px -5px 10px var(--sl);transform:rotate(var(--a,0deg))}
+.knob i{position:absolute;top:7px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--ac)}
+.dv{font-weight:700;font-size:1.05rem}
+.banner{display:none;position:sticky;top:8px;z-index:9;margin-bottom:20px;padding:14px 20px;border-radius:18px;color:#fff;font-weight:700;background:var(--p4);box-shadow:6px 6px 14px var(--sd);align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;animation:fl 1s infinite alternate}
+@keyframes fl{to{background:var(--p3)}}@media (prefers-reduced-motion:reduce){.banner{animation:none}}
+.banner button{color:var(--p4)}
+#raw{height:130px;overflow:auto;padding:10px;font-size:.75rem;white-space:pre-wrap;margin-bottom:12px}
+svg text{fill:var(--mu);font-size:11px;font-family:inherit}
+.pipe{stroke-dasharray:10 8;animation:fw linear infinite;animation-duration:var(--sp,0s);animation-play-state:var(--ps,paused)}
+@keyframes fw{to{stroke-dashoffset:-36}}
+.sw{position:relative;width:54px;height:28px;display:inline-block}.sw input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.sw i{position:absolute;inset:0;border-radius:99px;background:var(--bg);box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl);transition:background .15s}
+.sw i::after{content:"";position:absolute;top:3px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-2px -2px 5px var(--sl);transition:left .15s}
+.sw input:checked+i{background:var(--ac)}.sw input:checked+i::after{left:28px}.sw input:focus-visible+i{outline:2px solid var(--ac);outline-offset:3px}
+input[type=range]{-webkit-appearance:none;appearance:none;height:12px;border-radius:99px;background:linear-gradient(var(--ac),var(--ac)) 0 0/var(--v,50%) 100% no-repeat var(--bg);box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;border:0;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;border:0;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
+select{appearance:none;-webkit-appearance:none;border-radius:99px;padding-right:36px;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23948a82' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:99px}.seg button{box-shadow:none;background:transparent;padding:8px 16px}
+.seg button.on{background:var(--ac);color:#fff;box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
+details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1.6}
+#drip{position:fixed;right:22px;bottom:16px;width:150px;z-index:15;touch-action:none;cursor:grab;user-select:none}
+#drip::after{content:"";display:block;width:92px;height:12px;margin:8px auto 0;border-radius:50%;background:var(--sd);opacity:.55;filter:blur(4px)}
+#dw{width:150px}#dbody{position:relative;width:150px;aspect-ratio:174/216}
+.dp{position:absolute;pointer-events:none;z-index:3;-webkit-user-drag:none}
+.dp.arm{z-index:0}.dp.m{transform:scaleX(-1)}
+.dp.aw{transform-origin:12% 88%;animation:d-wave .45s ease-in-out infinite alternate}
+.dp.af{transform-origin:50% 90%;animation:d-flap .35s ease-in-out infinite alternate}
+.dp[data-k=sweat_drop]{animation:d-sweat 1s ease-in infinite}.dp[data-k=zzz]{animation:d-zz 2.2s ease-in-out infinite}
+.dp[data-k=stars]{animation:d-rot 2s linear infinite}.dp[data-k=tick]{animation:d-pop .6s cubic-bezier(.3,1.6,.5,1) both}
+.dp[data-k=umbrella]{animation:d-tilt 3s ease-in-out infinite}
+#bub{position:absolute;right:0;bottom:calc(100% + 12px);width:max-content;max-width:230px;padding:10px 16px;border-radius:20px;font-size:.78rem;line-height:1.4;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
+#bub.on{opacity:1;transform:none}
+.a-float{animation:d-float 3s ease-in-out infinite}.a-bounce{animation:d-bounce .6s ease-in-out infinite}.a-tilt{animation:d-tilt 1.8s ease-in-out infinite}
+.a-shiver{animation:d-shiver .14s linear infinite}.a-hop{animation:d-hop .9s ease-in-out infinite}.a-shake{animation:d-shake .12s linear infinite}.a-sleep{animation:d-sleep 4s ease-in-out infinite}
+#dbody.spin{animation:d-rot .8s ease-in-out 1}
+@keyframes d-float{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-7px) scale(.98,1.03)}}
+@keyframes d-bounce{0%,100%{transform:translateY(0) scale(1.06,.94)}40%{transform:translateY(-26px) scale(.94,1.06)}}
+@keyframes d-tilt{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) translateY(-4px)}}
+@keyframes d-shiver{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
+@keyframes d-hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-22px) scale(.96,1.05)}60%{transform:translateY(0) scale(1.05,.95)}}
+@keyframes d-shake{0%,100%{transform:translateX(-5px) rotate(-3deg)}50%{transform:translateX(5px) rotate(3deg)}}
+@keyframes d-sleep{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(3px) scale(1.02,.98)}}
+@keyframes d-rot{to{transform:rotate(360deg)}}
+@keyframes d-wave{from{transform:rotate(-12deg)}to{transform:rotate(16deg)}}
+@keyframes d-flap{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+@keyframes d-sweat{0%{transform:translateY(-4px);opacity:0}30%{opacity:1}100%{transform:translateY(10px);opacity:0}}
+@keyframes d-zz{0%,100%{transform:translateY(4px);opacity:.5}50%{transform:translateY(-8px);opacity:1}}
+@keyframes d-pop{from{transform:scale(0)}to{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#dw,#dbody,.dp{animation:none!important}}
+#smsLog{height:110px;overflow:auto;padding:10px;margin:12px 0 0;font-size:.75rem;white-space:pre-wrap}
+.fld{margin-top:14px}
+#rep{display:none}
+@media print{body>*:not(#rep){display:none!important}#rep{display:block!important;color:#000;background:#fff;font-family:sans-serif}#rep td,#rep th{border:1px solid #888;padding:4px 8px;font-size:12px}#rep table{border-collapse:collapse;width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="row" style="gap:16px"><img src="img/techminds.png" alt="TechMinds" style="height:52px"><div><h1>FlowSense</h1><div class="sub">by TechMinds · drain blockage prediction · ESP32-S3 live monitor</div></div></div>
+  <div class="row">
+    <span id="conn" class="sub"><span class="dot"></span>Not connected</span>
+    <button id="bConn">Connect ESP32-S3</button><button id="bDemo">Demo mode</button><button id="bCal">Set baseline</button><button id="bWiz">Calibration</button>
+    <span class="sub">Sound</span><label class="sw"><input type="checkbox" id="snd" checked aria-label="Sound"><i></i></label><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span class="sub">Drip</span><label class="sw"><input type="checkbox" id="dripOn" checked aria-label="Drip mascot"><i></i></label>
+  </div>
+</header>
+<div class="banner" id="ban"><span id="banT"></span><button id="bAck">Acknowledge</button></div>
+
+<section class="raised card" style="margin-bottom:24px">
+  <div class="status">
+    <div class="orb inset"><i id="orb"></i></div>
+    <div style="flex:1;min-width:240px">
+      <div class="cond" id="cond">Waiting for data</div>
+      <div id="cause" class="sub">Connect the board or start demo mode.</div>
+      <div id="evid" class="sub"></div><div id="pred" class="sub" style="margin-top:6px;color:var(--ac)"></div><div id="hl" class="sub" style="margin-top:6px"></div>
+      <div id="pills"></div>
+    </div>
+  </div>
+  <div id="msg" class="sub" style="margin-top:10px;min-height:1.2em"></div>
+  <div id="scen" class="row" style="margin-top:12px;display:none"><span class="sub">Demo scenario:</span>
+    <span class="seg raised"><button data-s="normal" class="on">Normal</button><button data-s="partial">Partial valve</button><button data-s="rain">Rain</button><button data-s="both">Blockage + rain</button><button data-s="over">Overflow</button></span></div>
+</section>
+
+<div class="grid">
+  <div class="raised card k c1"><label>Water flow</label><div class="stat"><span id="vFlow">–</span> <span class="unit">L/min</span></div><div class="sub" id="sFlow">Baseline not set</div></div>
+  <div class="raised card k c2"><label>Distance to water surface</label><div class="stat"><span id="vDist">–</span> <span class="unit">cm</span></div><div class="sub" id="sDist">Baseline not set</div></div>
+  <div class="raised card k c3"><label>Turbidity</label><div class="stat"><span id="vTurb">–</span> <span class="unit">units</span></div><div class="sub" id="sTurb">Baseline not set</div></div>
+  <div class="raised card k c4"><label>Rain sensor plate</label><div class="stat" id="vRain">–</div><div class="sub">Wet or dry only</div></div>
+</div>
+
+<div class="wide">
+  <div class="raised card"><h2>Drain model</h2><div class="inset" style="padding:8px">
+<svg viewBox="0 0 560 200" width="100%" role="img" aria-label="Animated drain model">
+ <g id="drops" style="display:none" fill="var(--ac)"><circle cx="50" cy="12" r="4"/><circle cx="80" cy="22" r="4"/><circle cx="110" cy="10" r="4"/></g>
+ <rect x="20" y="30" width="120" height="140" rx="10" fill="none" stroke="var(--mu)" stroke-width="3"/>
+ <rect id="water" x="23" y="168" width="114" height="0" fill="#fc8068" opacity=".6"/>
+ <path d="M140 100 H500 V160 H80 V170" fill="none" stroke="var(--mu)" stroke-width="16" opacity=".25"/>
+ <path class="pipe" id="pipe" d="M140 100 H500 V160 H80 V170" fill="none" stroke="#fc8068" stroke-width="4"/>
+ <circle cx="250" cy="100" r="18" fill="var(--bg)" stroke="var(--ac)" stroke-width="3"/><text x="238" y="132">pump</text>
+ <rect id="valve" x="380" y="86" width="26" height="28" rx="6" fill="var(--bg)" stroke="var(--ac)" stroke-width="3"/><text x="372" y="132">valve</text>
+ <circle id="blk" cx="440" cy="100" r="0" fill="#ef4444"/><text x="52" y="188">container</text>
+</svg></div></div>
+  <div class="raised card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Trend</h2>
+    <select id="win" style="width:auto"><option value="90">Last 90</option><option value="300">Last 300</option><option value="900">Last 900</option></select></div>
+    <div class="inset" style="padding:8px"><canvas id="cv" width="640" height="190"></canvas></div>
+    <div class="sub" style="margin-top:8px"><span style="color:#fc8068">Flow (blue)</span> and <span style="color:#6b625b">water level (dark)</span></div></div>
+</div>
+
+<div class="wide">
+  <div class="raised card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Incident reports</h2>
+    <div class="row"><select id="flt" style="width:auto"><option value="0">All</option><option value="2">Warning+</option><option value="3">Risk+</option></select><button id="bRep">PDF report</button><button id="bCsv">CSV</button><button id="bClr">Clear</button></div></div>
+    <div class="log inset" id="log"></div></div>
+  <div class="raised card"><h2>Test recording</h2>
+    <label>Label for this session</label><select id="lab"><option>normal</option><option>partial valve</option><option>heavy valve</option><option>rain</option><option>overflow</option></select>
+    <div class="row" style="margin-top:12px"><button id="bRec">Start recording</button><button id="bRecS">Save CSV</button><span id="recN" class="sub"></span></div>
+    <p class="sub">Saved files are labelled data you can use later to train a TinyML model.</p>
+    <h2 style="margin-top:16px">Calibration wizard</h2><div id="wzT" class="sub">Press Calibration to start.</div>
+    <div class="row" style="margin-top:10px"><button id="bWz" style="display:none">Record step</button><button id="bWzA" style="display:none">Apply thresholds</button></div></div>
+</div>
+
+<div class="wide">
+  <section class="raised card"><h2>Connection</h2>
+    <div class="seg raised" id="ctab"><button class="on" data-t="usb">USB</button><button data-t="wifi">Wi-Fi</button></div>
+    <div id="pUsb" class="fld"><p class="sub">Plug in the ESP32-S3 and press Connect ESP32-S3 at the top. It reconnects by itself if the cable is pulled.</p></div>
+    <div id="pWifi" class="fld" style="display:none">
+      <label>Wi-Fi name</label><input type="text" id="ssid" autocomplete="off">
+      <label class="fld">Wi-Fi password</label><div class="row"><input type="password" id="wpw" autocomplete="off" style="flex:1"><button id="bShow">Show</button></div>
+      <div class="fld"><button id="bWifi">Send to board over USB</button></div>
+      <label class="fld">Board address (IP)</label><div class="row"><input type="text" id="ip" placeholder="192.168.1.45" style="flex:1"><button id="bWsC">Connect</button></div>
+      <p class="sub" id="wmsg"></p>
+    </div>
+  </section>
+  <section class="raised card"><h2>SMS alerts</h2>
+    <div class="row" style="justify-content:space-between"><span>Send SMS alerts</span><label class="sw"><input type="checkbox" id="smsOn" aria-label="Send SMS alerts"><i></i></label></div>
+    <label class="fld">Mobile numbers (separate with commas)</label><input type="text" id="smsNum" placeholder="+91 98765 43210">
+    <div class="row fld"><div style="flex:1;min-width:150px"><label>Send when</label><select id="smsMin"><option value="2">Blockage warning or worse</option><option value="3">Overflow risk or worse</option><option value="4">Overflow detected only</option></select></div>
+    <div style="flex:1;min-width:120px"><label>Wait between SMS</label><select id="smsCool"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="30">30 minutes</option></select></div></div>
+    <div class="row fld"><button id="bSmsT">Send test SMS</button><button id="bSmsP">Open in phone app</button></div>
+    <pre id="smsLog" class="inset"></pre>
+  </section>
+</div>
+
+<section class="raised card" style="margin-bottom:24px"><h2>Calibration dials</h2>
+  <div class="set" id="set"></div>
+  <div class="row" style="margin-top:14px"><label style="margin:0">Theme</label><select id="theme" style="width:auto"><option value="">Light</option><option value="dark">Dark</option></select><button id="bDef">Reset thresholds</button></div>
+  <p class="sub">Turn a dial by dragging it, using the mouse wheel, or the arrow keys. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically.</p></section>
+
+<section class="raised card"><h2>Firmware console</h2>
+  <div id="raw" class="inset"></div>
+  <div class="row"><input type="text" id="cmd" placeholder="Command to send, e.g. restart" style="flex:1;min-width:200px"><button id="bSend">Send</button></div>
+  <details><summary>Serial format and wiring help</summary>
+   <p><button id="bSetup">Run first-time setup again</button></p>
+   <p>Send one JSON line per second at 115200 baud: <code>{"flow":4.2,"dist":12.5,"turb":850,"rain":0}</code><br>flow = L/min, dist = cm to water, turb = higher means dirtier, rain = 1 wet / 0 dry.<br>Arduino: <code>Serial.printf("{\"flow\":%.2f,\"dist\":%.1f,\"turb\":%d,\"rain\":%d}\n",flow,dist,turb,rain);</code></p>
+   <p>Wiring reminders: the ESP32-S3 inputs accept 3.3 V only. Put the 4-channel voltage divider on the ultrasonic echo, the turbidity analog output and the flow signal before connecting. Confirm the rain module pin labels first. Join all grounds. Keep the ultrasonic control board and turbidity module dry. Test each sensor alone, then combine.</p></details>
+  <details><summary>ESP32-S3 firmware for Wi-Fi and SMS</summary>
+<p>SMS needs a GSM module (for example SIM800L) with a SIM card on the ESP32-S3, because a PC cannot send SMS by itself. The app sends commands as JSON lines. Start Serial1 on your GSM module pins in setup(), and for every reading print the JSON line and also call ws.broadcastTXT(json) once Wi-Fi is on.</p>
+<pre class="inset">#include &lt;WiFi.h&gt;
+#include &lt;WebSocketsServer.h&gt;
+#include &lt;ArduinoJson.h&gt;
+WebSocketsServer ws(81);
+bool wsOn=false;
+void sendSms(const String&amp; to,const String&amp; msg){
+  Serial1.println("AT+CMGF=1");delay(300);
+  Serial1.println("AT+CMGS=\""+to+"\"");delay(300);
+  Serial1.print(msg);Serial1.write(26);
+}
+void handle(const String&amp; line){
+  JsonDocument d;if(deserializeJson(d,line))return;
+  String c=d["cmd"];
+  if(c=="sms")sendSms(d["to"].as&lt;String&gt;(),d["msg"].as&lt;String&gt;());
+  if(c=="wifi")WiFi.begin(d["ssid"].as&lt;const char*&gt;(),d["pass"].as&lt;const char*&gt;());
+}
+void loop(){
+  if(Serial.available())handle(Serial.readStringUntil('\n'));
+  if(WiFi.status()==WL_CONNECTED&amp;&amp;!wsOn){ws.begin();wsOn=true;Serial.printf("{\"ip\":\"%s\"}\n",WiFi.localIP().toString().c_str());}
+  if(wsOn)ws.loop();
+}</pre></details></section>
+
+<div id="drip" aria-hidden="true"><div id="bub" class="raised"></div><div id="dw"><div id="dbody"></div></div></div>
+<div id="rep"></div>
+<script>
+const DRIP={"arm_left":[70,163,"drip/arm_left.png"],"arm_right":[69,163,"drip/arm_right.png"],"arm_up":[100,175,"drip/arm_up.png"],"arm_wave":[131,126,"drip/arm_wave.png"],"body":[174,216,"drip/body.png"],"brows_angry":[147,46,"drip/brows_angry.png"],"brows_up":[155,51,"drip/brows_up.png"],"brows_worried":[192,37,"drip/brows_worried.png"],"eyes_closed":[190,39,"drip/eyes_closed.png"],"eyes_open":[196,87,"drip/eyes_open.png"],"hardhat":[125,93,"drip/hardhat.png"],"mouth_open":[56,43,"drip/mouth_open.png"],"mouth_scream":[87,61,"drip/mouth_scream.png"],"mouth_sleep":[93,21,"drip/mouth_sleep.png"],"mouth_smile":[58,25,"drip/mouth_smile.png"],"mouth_worried":[79,31,"drip/mouth_worried.png"],"pupil_l":[44,44,"drip/pupil_l.png"],"pupil_r":[41,44,"drip/pupil_r.png"],"stars":[96,94,"drip/stars.png"],"sweat_drop":[67,91,"drip/sweat_drop.png"],"tick":[89,73,"drip/tick.png"],"umbrella":[105,94,"drip/umbrella.png"],"zzz":[120,94,"drip/zzz.png"]};
+const $=id=>document.getElementById(id);
+const DEF={dropWarn:25,dropBlock:50,rise:1,risk:4,over:2,turb:30};
+const NAMES={dropWarn:'Flow drop: possible (%)',dropBlock:'Flow drop: blockage (%)',rise:'Level rise warning (cm)',risk:'Overflow risk distance (cm)',over:'Overflow distance (cm)',turb:'Turbidity change (%)'};
+let S={cfg:{...DEF},base:null,inc:[],vol:.6,mute:false,theme:''};
+try{Object.assign(S,JSON.parse(localStorage.getItem('dra')||'{}'))}catch(e){}
+S.inc.forEach(i=>i.time=new Date(i.time));
+S.sms=Object.assign({on:false,nums:'',min:3,cool:5},S.sms);if(S.drip===undefined)S.drip=true;
+const save=()=>{try{localStorage.setItem('dra',JSON.stringify(S))}catch(e){}};
+const C=()=>{const c=S.cfg;return{dw:c.dropWarn/100,db:c.dropBlock/100,rise:c.rise,risk:c.risk,over:c.over,tb:c.turb/100}};
+const ST=[{n:'Normal',c:'#22b573',s:'None'},{n:'Possible blockage',c:'#e6b800',s:'Low'},{n:'Blockage warning',c:'#e8761f',s:'Medium'},{n:'Overflow risk',c:'#ef4444',s:'High'},{n:'Overflow detected',c:'#c0143c',s:'Critical'}];
+const msg=t=>$('msg').textContent=t;
+
+const SA={};['click','connect','disconnect','baseline','rain','possible','warning','risk','overflow','predict','normal'].forEach(n=>{const a=new Audio('sounds/'+n+'.mp3');a.preload='auto';SA[n]=a});
+const play=(n,idle)=>{const a=SA[n];if(!a||S.mute)return;if(idle&&!a.paused&&!a.ended)return;a.volume=Math.max(0,Math.min(1,S.vol));a.currentTime=0;a.play().catch(()=>{})};
+document.addEventListener('click',e=>{if(e.target.closest('button'))play('click')});
+$('snd').onchange=e=>{S.mute=!e.target.checked;save()};
+$('vol').oninput=e=>{S.vol=e.target.value/100;e.target.style.setProperty('--v',e.target.value+'%');save()};
+
+let hist=[],lastLvl=0,acked=false,calBuf=null,rec={on:false,rows:[]},wz={step:0,res:[],buf:null,sug:null},lastRx=0,connected=false,prevRain=0,predWarn=false,demo=null,scen='normal',tick=0;
+const mean=(a,k)=>a.reduce((s,x)=>s+x[k],0)/a.length;
+const sd=(a,k,fl)=>{const m=mean(a,k);return Math.max(Math.sqrt(a.reduce((s,x)=>s+(x[k]-m)**2,0)/a.length),fl)};
+function mkBase(b){S.base={flow:mean(b,'flow'),dist:mean(b,'dist'),turb:mean(b,'turb'),sf:sd(b,'flow',Math.max(.05,.05*mean(b,'flow'))),sd:sd(b,'dist',.2),st:sd(b,'turb',10)};save()}
+
+function health(d){const r=hist.slice(-20),i=[];const bad=d.dist<=0||d.dist>600;
+  if(bad)i.push('Ultrasonic reading out of range, check wiring');
+  if(d.turb<=0||d.turb>=4095)i.push('Turbidity reading at its limit');
+  if(r.length>=20){if(r.every(q=>q.l===d.dist))i.push('Ultrasonic value is not changing');if(d.flow>0&&r.every(q=>q.f===d.flow))i.push('Flow value is frozen')}
+  if(S.base&&d.flow===0)i.push('Flow is 0: blockage or sensor fault');
+  return{i,bad}}
+
+function predictEta(){const p=hist.slice(-20);if(p.length<10)return null;const n=p.length,t0=p[0].t;let sx=0,sy=0,sxy=0,sxx=0;
+  p.forEach(q=>{const x=(q.t-t0)/1000;sx+=x;sy+=q.l;sxy+=x*q.l;sxx+=x*x});const den=n*sxx-sx*sx;if(!den)return null;
+  const m=(n*sxy-sx*sy)/den,cur=p[n-1].l;if(m>-.005||cur<=S.cfg.over)return null;return(cur-S.cfg.over)/-m}
+
+function evaluate(d,h){const c=C(),b=S.base;let lvl=0,ev=[],pts=0,fd=0,rise=0,td=0,z=0,cause='No fault indicated';
+  if(b){fd=b.flow>0?1-d.flow/b.flow:0;rise=b.dist-d.dist;td=b.turb>0?(d.turb-b.turb)/b.turb:0;z=Math.max(Math.abs(d.flow-b.flow)/b.sf,h.bad?0:Math.abs(d.dist-b.dist)/b.sd);
+    if(fd>.05)ev.push('Flow '+(-fd*100).toFixed(0)+'% vs baseline');if(rise>.2)ev.push('Level +'+rise.toFixed(1)+' cm');if(Math.abs(td)>.1)ev.push('Turbidity '+(td>0?'+':'')+(td*100).toFixed(0)+'%');if(z>3)ev.push('Anomaly '+z.toFixed(1)+' σ')}
+  if(d.rain)ev.push('Rain plate wet');
+  const blk=fd>=c.dw,rising=rise>=c.rise,dirty=td>=c.tb;
+  if(b){if(blk&&(rising||dirty))lvl=1;if(fd>=c.db&&rising)lvl=2;if(z>4&&fd>.1&&!lvl)lvl=1}
+  if(!h.bad){if(d.dist<=c.risk)lvl=Math.max(lvl,3);if(d.dist<=c.over)lvl=4}
+  if(blk&&d.rain)cause='Blockage and rainfall likely both contributing';else if(blk)cause='Likely blockage: flow falling'+(rising?' while level rises':'');else if(d.rain&&rising)cause='Rainfall likely contributing to rising level';else if(lvl>=3)cause='Water level high; cause unclear';else if(lvl)cause='Unusual pattern against baseline';
+  if(blk)pts+=fd>=c.db?40:25;if(rising)pts+=25;if(dirty)pts+=15;if(d.rain&&rising)pts+=10;if(lvl>=3)pts+=15;if(z>3)pts+=10;
+  return{lvl,ev,cause,conf:lvl?Math.min(95,pts):0,fd,rise}}
+
+function onData(d){d={flow:+d.flow||0,dist:+d.dist||0,turb:+d.turb||0,rain:d.rain?1:0};lastRx=Date.now();$('banT').dataset.nodata='';
+  if(calBuf){calBuf.push(d);msg('Setting baseline… '+calBuf.length+'/10');if(calBuf.length>=10){mkBase(calBuf);calBuf=null;msg('Baseline saved. Keep the valve fully open.');play('baseline');dripFlash('cheer',2500,'Baseline saved!')}}
+  if(wz.buf){wz.buf.push(d);if(wz.buf.length>=10){wz.res.push({flow:mean(wz.buf,'flow'),dist:mean(wz.buf,'dist'),turb:mean(wz.buf,'turb'),rain:mean(wz.buf,'rain'),buf:wz.buf});if(wz.step===0)mkBase(wz.buf);wz.buf=null;wz.step++;wzUi();play('baseline');dripFlash('cheer',2500,'Baseline saved!')}}
+  const h=health(d),r=evaluate(d,h),s=ST[r.lvl];
+  if(d.rain&&!prevRain){play('rain');dripSay('Rain detected. Umbrella up!')}prevRain=d.rain;
+  $('vFlow').textContent=d.flow.toFixed(2);$('vDist').textContent=d.dist.toFixed(1);$('vTurb').textContent=Math.round(d.turb);$('vRain').textContent=d.rain?'Wet':'Dry';
+  const b=S.base;if(b){$('sFlow').textContent='Baseline '+b.flow.toFixed(2);$('sDist').textContent='Baseline '+b.dist.toFixed(1)+' cm';$('sTurb').textContent='Baseline '+Math.round(b.turb)}
+  $('cond').textContent=s.n;$('cond').style.color=s.c;$('orb').style.background=s.c;
+  $('cause').textContent=r.cause;$('evid').textContent=r.ev.join(' · ')||(b?'Readings match baseline':'Set a baseline while flow is normal');
+  $('pills').innerHTML=r.lvl?'<span class="pill inset" style="color:'+s.c+'">Severity: '+s.s+'</span><span class="pill inset" style="color:#fc8068">Confidence: '+r.conf+'% (estimate)</span>':'';
+  $('hl').innerHTML=h.i.length?'<span style="color:#e8761f">Sensor check: '+h.i.join('; ')+'</span>':'Sensors look healthy';
+  const eta=predictEta();if(eta&&eta<1800){$('pred').textContent='Prediction: overflow in about '+(eta<90?Math.round(eta)+' s':(eta/60).toFixed(1)+' min')+' at the current rate';if(eta<180&&!predWarn){predWarn=true;play('predict');dripSay('Overflow predicted in about '+Math.max(1,Math.round(eta/60))+' min.')}}else{$('pred').textContent='';predWarn=false}
+  if(r.lvl>lastLvl){S.inc.unshift({time:new Date(),cond:s.n,cause:r.cause,ev:r.ev.join('; '),sev:s.s,conf:r.conf,lvl:r.lvl,c:s.c});S.inc=S.inc.slice(0,200);save();renderLog();acked=false;
+    play(['','possible','warning','risk','overflow'][r.lvl]);maybeSms(r,s)}
+  else if(r.lvl===0&&lastLvl>0){play('normal');smsLastLvl=0;dripFlash('cheer',2500,'Back to normal!')}
+  lastLvl=r.lvl;
+  const ban=$('ban');if(r.lvl>=3&&!acked){ban.style.display='flex';$('banT').textContent=s.n+': '+r.cause}else ban.style.display='none';
+  hist.push({t:Date.now(),f:d.flow,l:d.dist});if(hist.length>900)hist.shift();
+  if(rec.on){rec.rows.push([new Date().toISOString(),$('lab').value,d.flow,d.dist,d.turb,d.rain,s.n].join(','));$('recN').textContent=rec.rows.length+' rows'}
+  dripFault=h.bad||h.i.some(x=>/not changing|frozen|limit/.test(x));dripSync();drawDrain(d,r);draw()}
+
+function drawDrain(d,r){const b=S.base,ref=(b?b.dist:15)+3,over=S.cfg.over,p=Math.max(0,Math.min(1,1-(d.dist-over)/Math.max(ref-over,1)));
+  $('water').setAttribute('height',p*134);$('water').setAttribute('y',167-p*134);
+  const fl=b&&b.flow>0?d.flow/b.flow:(d.flow>0?1:0);$('pipe').style.setProperty('--sp',d.flow>.05?Math.max(.4,Math.min(6,1.2/Math.max(fl,.1)))+'s':'0s');$('pipe').style.setProperty('--ps',d.flow>.05?'running':'paused');
+  $('blk').setAttribute('r',r.fd>=C().dw?Math.min(16,6+r.fd*14):0);$('drops').style.display=d.rain?'block':'none'}
+
+function draw(){const cv=$('cv'),x=cv.getContext('2d'),w=cv.width,h=cv.height,n=+$('win').value,v=hist.slice(-n);x.clearRect(0,0,w,h);
+  const line=(k,col,inv)=>{if(v.length<2)return;const a=v.map(p=>p[k]);let mn=Math.min(...a),mx=Math.max(...a);if(mx-mn<.5)mx=mn+.5;x.beginPath();x.lineWidth=3;x.lineJoin='round';x.strokeStyle=col;
+    a.forEach((y,i)=>{const px=i/(v.length-1)*(w-20)+10,q=(y-mn)/(mx-mn),py=(inv?q:1-q)*(h-30)+15;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()};
+  line('f','#fc8068',false);line('l','#6b625b',true)}
+
+function renderLog(){const m=+$('flt').value,l=S.inc.filter(i=>i.lvl>=m);
+  $('log').innerHTML=l.map(i=>'<div class="inc inset" style="border-left:6px solid '+i.c+'"><b style="color:'+i.c+'">'+i.cond+'</b> · '+i.sev+' severity, '+i.conf+'% confidence<br>'+i.cause+'<br><span class="sub">'+i.ev+'<br>'+i.time.toLocaleString()+'</span></div>').join('')||'<div class="sub" style="padding:10px">No incidents yet.</div>'}
+$('flt').onchange=renderLog;$('win').onchange=draw;
+$('bClr').onclick=()=>{if(confirm('Clear all saved incidents?')){S.inc=[];save();renderLog()}};
+const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()};
+const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+$('bCsv').onclick=()=>dl('drainage-incidents.csv',['Time,Condition,Likely cause,Sensor evidence,Severity,Confidence %'].concat(S.inc.map(i=>[i.time.toISOString(),i.cond,i.cause,i.ev,i.sev,i.conf].map(q).join(','))).join('\n'),'text/csv');
+$('bRep').onclick=()=>{$('rep').innerHTML='<h1 style="color:#000;background:none">FlowSense: incident report</h1><p>Generated '+new Date().toLocaleString()+'. Prototype estimates, not confirmed measurements.</p><table><tr><th>Time</th><th>Condition</th><th>Likely cause</th><th>Sensor evidence</th><th>Severity</th><th>Confidence</th></tr>'+S.inc.map(i=>'<tr><td>'+i.time.toLocaleString()+'</td><td>'+i.cond+'</td><td>'+i.cause+'</td><td>'+i.ev+'</td><td>'+i.sev+'</td><td>'+i.conf+'%</td></tr>').join('')+'</table>';print()};
+$('bRec').onclick=()=>{rec.on=!rec.on;$('bRec').textContent=rec.on?'Stop recording':'Start recording';$('bRec').classList.toggle('on',rec.on);if(rec.on)rec.rows=[]};
+$('bRecS').onclick=()=>dl('drainage-test-'+$('lab').value.replace(/ /g,'-')+'.csv','time,label,flow,dist,turb,rain,condition\n'+rec.rows.join('\n'),'text/csv');
+
+const WS=['Normal flow, valve fully open','Partial valve, about half closed','Valve mostly closed','Wet the rain plate'];
+function wzUi(){const t=$('wzT'),b=$('bWz'),a=$('bWzA');
+  if(wz.step>=WS.length){const [n,p,hv]=wz.res;wz.sug={dropWarn:Math.max(10,Math.round((1-p.flow/n.flow)*50)),dropBlock:Math.max(30,Math.round((1-hv.flow/n.flow)*70)),rise:Math.max(.5,Math.round((n.dist-p.dist)*5)/10)};
+    t.textContent='Done. Suggested: flow drop '+wz.sug.dropWarn+'% / '+wz.sug.dropBlock+'%, level rise '+wz.sug.rise+' cm.';b.style.display='none';a.style.display='';return}
+  t.textContent='Step '+(wz.step+1)+' of 4: '+WS[wz.step]+'. Set it up, then record.';b.style.display='';a.style.display='none'}
+$('bWiz').onclick=()=>{wz={step:0,res:[],buf:null,sug:null};wzUi();$('wzT').scrollIntoView({behavior:'smooth'})};
+$('bWz').onclick=()=>{if(!connected&&!demo){msg('Connect the board or start demo mode first.');return}wz.buf=[];$('wzT').textContent='Recording step '+(wz.step+1)+'… keep conditions steady for 10 readings.'};
+$('bWzA').onclick=()=>{Object.assign(S.cfg,wz.sug);save();buildSet();msg('Suggested thresholds applied.')};
+$('bCal').onclick=()=>{if(!connected&&!demo){msg('Connect the board or start demo mode first.');return}calBuf=[];msg('Setting baseline… keep normal flow.')};
+
+const DL={dropWarn:[5,90,1,'%'],dropBlock:[10,95,1,'%'],rise:[.2,5,.1,'cm'],risk:[1,20,.5,'cm'],over:[.5,10,.5,'cm'],turb:[5,100,1,'%']};
+const pt=(r,a)=>[(65+r*Math.sin(a*Math.PI/180)).toFixed(1),(65-r*Math.cos(a*Math.PI/180)).toFixed(1)];
+function dialDraw(el){const k=el.dataset.k,[mn,mx,st,u]=DL[k],v=S.cfg[k],f=Math.max(0,Math.min(1,(v-mn)/(mx-mn))),a=-135+270*f;let t='';
+  for(let i=0;i<28;i++){const g=-135+270*i/27,p1=pt(55,g),p2=pt(61,g);t+='<line x1="'+p1[0]+'" y1="'+p1[1]+'" x2="'+p2[0]+'" y2="'+p2[1]+'" stroke="'+(i/27<=f+1e-6?'#fc8068':'#b5aba3')+'" stroke-width="2.5" stroke-linecap="round"/>'}
+  const s0=pt(47,-135),s1=pt(47,135),e=pt(47,a);
+  t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 1 1 '+s1[0]+' '+s1[1]+'" fill="none" stroke="#cfc6bf" stroke-width="5" stroke-linecap="round"/>';
+  if(f>0)t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 '+(270*f>180?1:0)+' 1 '+e[0]+' '+e[1]+'" fill="none" stroke="#fc8068" stroke-width="5" stroke-linecap="round"/>';
+  el.querySelector('svg').innerHTML=t;el.querySelector('.knob').style.setProperty('--a',a+'deg');el.setAttribute('aria-valuenow',v);el.parentNode.querySelector('.dv').textContent=v+' '+u}
+function dialSet(el,v){const k=el.dataset.k,[mn,mx,st]=DL[k];v=+(Math.round(Math.min(mx,Math.max(mn,v))/st)*st).toFixed(2);S.cfg[k]=v;save();dialDraw(el)}
+function buildSet(){$('set').innerHTML=Object.keys(NAMES).map(k=>'<div class="dialw"><div class="dial" data-k="'+k+'" tabindex="0" role="slider" aria-label="'+NAMES[k]+'" aria-valuemin="'+DL[k][0]+'" aria-valuemax="'+DL[k][1]+'"><svg viewBox="0 0 130 130"></svg><div class="knob"><i></i></div></div><div class="dv"></div><label style="margin:0">'+NAMES[k]+'</label></div>').join('');
+  $('set').querySelectorAll('.dial').forEach(el=>{const k=el.dataset.k,[mn,mx,st]=DL[k];dialDraw(el);
+    const mv=e=>{const b=el.getBoundingClientRect();let a=Math.atan2(e.clientX-b.left-b.width/2,-(e.clientY-b.top-b.height/2))*180/Math.PI;if(Math.abs(a)>135)a=a<0?-135:135;dialSet(el,mn+(a+135)/270*(mx-mn))};
+    el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);mv(e)};el.onpointermove=e=>{if(el.hasPointerCapture(e.pointerId))mv(e)};
+    el.onwheel=e=>{e.preventDefault();dialSet(el,S.cfg[k]+(e.deltaY<0?1:-1)*st)};
+    el.onkeydown=e=>{const d={ArrowUp:1,ArrowRight:1,ArrowDown:-1,ArrowLeft:-1}[e.key];if(d){e.preventDefault();dialSet(el,S.cfg[k]+d*st)}}})}
+$('bDef').onclick=()=>{S.cfg={...DEF};save();buildSet()};
+function applyTheme(){document.documentElement.className=S.theme}
+$('theme').onchange=e=>{S.theme=e.target.value;applyTheme();save()};
+$('bAck').onclick=()=>{acked=true;$('ban').style.display='none'};
+setInterval(()=>{if(lastLvl>=3&&!acked)play(lastLvl===4?'overflow':'risk',true)},3000);
+
+function setConn(ok){if(ok===connected)return;connected=ok;play(ok?'connect':'disconnect');if(ok)dripFlash('wave',2200,'Hi! Board connected.');
+  $('conn').innerHTML='<span class="dot" style="background:'+(ok?'var(--ok)':'var(--mu)')+'"></span>'+(ok?'Connected':'Not connected, retrying…')}
+setInterval(()=>{if(connected&&Date.now()-lastRx>5000){$('hl').innerHTML='<span style="color:#ef4444">No data for '+Math.round((Date.now()-lastRx)/1000)+' s: check cable and firmware</span>'}},1000);
+const raw=l=>{const r=$('raw');r.textContent+=l+'\n';if(r.textContent.length>6000)r.textContent=r.textContent.slice(-4000);r.scrollTop=r.scrollHeight};
+let wr=null;const retry=p=>setTimeout(()=>run(p),3000);
+async function run(p){
+  try{await p.open({baudRate:115200})}catch(e){msg('Could not open the port: '+e.message+'. Close other serial programs.');return retry(p)}
+  setConn(true);lastRx=Date.now();msg('Reading from the ESP32-S3…');
+  const dec=new TextDecoderStream(),pipe=p.readable.pipeTo(dec.writable).catch(()=>{}),rd=dec.readable.getReader();wr=p.writable.getWriter();let buf='';
+  try{while(true){const{value,done}=await rd.read();if(done)break;buf+=value;let i;while((i=buf.indexOf('\n'))>=0){const l=buf.slice(0,i).trim();buf=buf.slice(i+1);handleLine(l)}}}catch(e){}
+  try{await rd.cancel()}catch(e){}try{wr.releaseLock()}catch(e){}try{await pipe}catch(e){}try{await p.close()}catch(e){}
+  wr=null;setConn(false);retry(p)}
+$('bConn').onclick=async()=>{if(!('serial' in navigator)){msg('Serial ports are not available in this window.');return}
+  try{stopDemo();run(await navigator.serial.requestPort())}catch(e){msg('No port selected.')}};
+$('bSend').onclick=()=>{const c=$('cmd').value.trim();if(!c)return;if(!tx(c)){msg('Connect the board first.');return}raw('> '+c);$('cmd').value=''};
+$('cmd').onkeydown=e=>{if(e.key==='Enter')$('bSend').click()};
+if('serial' in navigator)navigator.serial.getPorts().then(l=>{if(l.length)run(l[0])}).catch(()=>{});
+
+function stopDemo(){if(demo){clearInterval(demo);demo=null;$('bDemo').classList.remove('on');$('scen').style.display='none'}}
+$('bDemo').onclick=()=>{if(demo){stopDemo();return}
+  $('bDemo').classList.add('on');$('scen').style.display='flex';hist=[];lastLvl=0;tick=0;scen='normal';$('scen').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',i===0));
+  $('conn').innerHTML='<span class="dot" style="background:var(--p1)"></span>Demo data';
+  const n=()=>Math.random()-.5;
+  demo=setInterval(()=>{tick++;const p={normal:[4.2,12.5,850,0],partial:[2,11,1150,0],rain:[4.1,10.8,860,1],both:[1.6,8.5,1200,1],over:[.9,1.8,1300,1]}[scen];
+    onData({flow:p[0]+n()*.2,dist:p[1]+n()*.2,turb:p[2]+n()*30,rain:p[3]});if(tick===2&&!S.base)calBuf=[]},1000)};
+$('scen').onclick=e=>{if(e.target.dataset.s){scen=e.target.dataset.s;$('scen').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===e.target));msg('Demo scenario: '+e.target.textContent)}};
+
+
+let ws=null,wsAuto=false,wsOk=false,smsL=[],smsLast=0,smsLastLvl=0,dripFault=false;
+function tx(o){const l=(typeof o==='string'?o:JSON.stringify(o))+'\n';if(wr){wr.write(new TextEncoder().encode(l)).catch(()=>{});return true}if(ws&&ws.readyState===1){ws.send(l);return true}return false}
+function handleLine(l){if(!l)return;raw(l);if(l[0]!=='{')return;let d;try{d=JSON.parse(l)}catch(e){return}
+  if(d.ip){$('ip').value=d.ip;S.ip=d.ip;save();$('wmsg').textContent='Board joined Wi-Fi. Address: '+d.ip+'. Press Connect.';return}
+  if(d.wifi==='failed'){$('wmsg').textContent='The board could not join that Wi-Fi. Check the name and password.';return}
+  if('flow' in d)onData(d)}
+function wsConnect(){const ip=$('ip').value.trim();if(!ip){$('wmsg').textContent='Enter the board address first.';return}
+  S.ip=ip;save();wsAuto=true;let w;try{w=new WebSocket('ws://'+ip+':81')}catch(e){$('wmsg').textContent='That address is not valid.';return}ws=w;
+  w.onopen=()=>{wsOk=true;setConn(true);lastRx=Date.now();$('wmsg').textContent='Connected over Wi-Fi.'};
+  w.onmessage=e=>String(e.data).split('\n').forEach(l=>handleLine(l.trim()));
+  w.onclose=()=>{wsOk=false;setConn(false);if(wsAuto)setTimeout(()=>{if(wsAuto&&ws===w)wsConnect()},3000)};
+  w.onerror=()=>{$('wmsg').textContent='Cannot reach the board. Check the address and that this PC is on the same Wi-Fi.'}}
+$('bWsC').onclick=()=>{if(wsOk||wsAuto){wsAuto=false;if(ws)ws.close();$('bWsC').textContent='Connect';return}$('bWsC').textContent='Disconnect';wsConnect()};
+$('bWifi').onclick=()=>{const n=$('ssid').value.trim();if(!n){$('wmsg').textContent='Enter the Wi-Fi name.';return}if(!wr){$('wmsg').textContent='Connect the board over USB first, then send the Wi-Fi details.';return}
+  S.ssid=n;save();tx({cmd:'wifi',ssid:n,pass:$('wpw').value});$('wmsg').textContent='Sent. Waiting for the board to join Wi-Fi…'};
+$('bShow').onclick=()=>{const t=$('wpw').type==='password';$('wpw').type=t?'text':'password';$('bShow').textContent=t?'Hide':'Show'};
+$('ctab').onclick=e=>{const t=e.target.dataset.t;if(!t)return;$('ctab').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===e.target));$('pUsb').style.display=t==='usb'?'':'none';$('pWifi').style.display=t==='wifi'?'':'none'};
+$('ssid').value=S.ssid||'';$('ip').value=S.ip||'';
+
+const normNum=v=>{let d=v.replace(/[\s\-()]/g,'');if(/^\d{10}$/.test(d))d='+91'+d;else if(/^0\d{10}$/.test(d))d='+91'+d.slice(1);else if(/^91\d{10}$/.test(d))d='+'+d;return/^\+\d{10,15}$/.test(d)?d:null};
+const numList=()=>S.sms.nums.split(',').map(x=>normNum(x.trim())).filter(Boolean);
+function smsLog(t){smsL.unshift(new Date().toLocaleTimeString()+'  '+t);smsL=smsL.slice(0,30);$('smsLog').textContent=smsL.join('\n')}
+function smsSend(text,test){const n=numList();if(!n.length){smsLog('No valid mobile number');return false}
+  if(!tx({cmd:'sms',to:n[0],msg:text})){smsLog('Not sent: board not connected');return false}
+  n.slice(1).forEach(to=>tx({cmd:'sms',to,msg:text}));smsLog((test?'Test sent to ':'Sent to ')+n.join(', ')+' via the board');return true}
+function maybeSms(r,s){if(!S.sms.on||r.lvl<S.sms.min)return;if(Date.now()-smsLast<S.sms.cool*60000&&r.lvl<=smsLastLvl)return;
+  const m=('Drainage alert: '+s.n+'. '+r.cause+'. '+r.ev.join(', ')+'. '+new Date().toLocaleString('en-IN')).replace(/[^\x20-\x7e]/g,'').slice(0,160);
+  if(smsSend(m,false)){smsLast=Date.now();smsLastLvl=r.lvl}}
+$('smsOn').checked=S.sms.on;$('smsNum').value=S.sms.nums;$('smsMin').value=S.sms.min;$('smsCool').value=S.sms.cool;
+$('smsOn').onchange=e=>{S.sms.on=e.target.checked;save()};$('smsNum').oninput=e=>{S.sms.nums=e.target.value;save()};
+$('smsMin').onchange=e=>{S.sms.min=+e.target.value;save()};$('smsCool').onchange=e=>{S.sms.cool=+e.target.value;save()};
+$('bSmsT').onclick=()=>smsSend('FlowSense: test message from the app.',true);
+$('bSmsP').onclick=()=>{const n=numList();if(!n.length){smsLog('No valid mobile number');return}location.href='sms:'+n[0]+'?body='+encodeURIComponent('FlowSense: '+($('cond').textContent||'status'))};
+
+const R=216/174,EL={},PL=[35,65];
+const POS={eyes_open:[50,57,54],eyes_closed:[50,58,52],brows_up:[50,41,50],brows_angry:[50,43,46],brows_worried:[50,42,56],mouth_smile:[50,72,15],mouth_open:[50,73,13],mouth_worried:[50,74,18],mouth_scream:[50,74,22],mouth_sleep:[50,73,16],hardhat:[50,6,52],umbrella:[52,-14,70],sweat_drop:[82,44,12],zzz:[88,-4,34],stars:[50,-6,56],tick:[92,18,26],pupil_l:[35,58,9.5],pupil_r:[65,58,9.5],arm_left:[-1,66,21],arm_right:[101,66,21],arm_wave:[104,50,38],arm_up:[101,52,29],arm_up2:[-1,52,29]};
+function mk(k,src,cls){const i=document.createElement('img');i.src=DRIP[src||k][2];i.alt='';i.draggable=false;i.className='dp '+(cls||'');i.dataset.k=k;i.style.display='none';$('dbody').appendChild(i);EL[k]=i;
+  const q=POS[k];if(q){const[sw,sh]=DRIP[src||k],h=q[2]*sh/sw/R,st=i.style;st.left=(q[0]-q[2]/2)+'%';st.top=(q[1]-h/2)+'%';st.width=q[2]+'%';st.height=h+'%'}}
+mk('body');Object.assign(EL.body.style,{display:'block',left:0,top:0,width:'100%',height:'100%',zIndex:1});
+Object.keys(POS).forEach(k=>{if(!EL[k])mk(k,k==='arm_up2'?'arm_up':k,k==='arm_up2'?'arm m':k==='arm_up'?'arm af':k==='arm_wave'?'arm aw':/^arm/.test(k)?'arm':'')});
+const EX={
+ idle:{e:'o',m:'mouth_smile',l:'arm_left',r:'arm_right',a:'float'},
+ wave:{e:'o',b:'brows_up',m:'mouth_open',l:'arm_left',r:'arm_wave',a:'float'},
+ happy:{e:'c',m:'mouth_open',l:'arm_up2',r:'arm_up',a:'bounce'},
+ curious:{e:'o',b:'brows_up',m:'mouth_smile',l:'arm_left',r:'arm_right',a:'tilt'},
+ worried:{e:'o',b:'brows_worried',m:'mouth_worried',l:'arm_left',r:'arm_right',x:['sweat_drop'],a:'shiver'},
+ alarmed:{e:'o',b:'brows_up',m:'mouth_open',l:'arm_up2',r:'arm_up',x:['hardhat'],a:'hop'},
+ panic:{e:'o',b:'brows_worried',m:'mouth_scream',l:'arm_up2',r:'arm_up',x:['hardhat','sweat_drop'],a:'shake'},
+ think:{e:'o',m:'mouth_sleep',l:'arm_left',r:'arm_right',a:'float',look:[.8,-.8]},
+ sleep:{e:'c',m:'mouth_sleep',l:'arm_left',r:'arm_right',x:['zzz'],a:'sleep'},
+ dizzy:{e:'o',b:'brows_worried',m:'mouth_worried',l:'arm_left',r:'arm_right',x:['stars'],a:'tilt'},
+ cheer:{e:'c',b:'brows_up',m:'mouth_open',l:'arm_up2',r:'arm_up',x:['tick'],a:'bounce'}};
+const MSG={curious:'Hmm, flow looks lower than usual.',worried:'Blockage warning! Flow is dropping while the level rises.',alarmed:'Overflow risk! Please check the drain.',panic:'OVERFLOW! Water has reached the limit!',sleep:'Zzz... waiting for the board.',think:'Calibrating. Keep the flow steady.',dizzy:'A sensor looks faulty. Check the wiring.'};
+const GREET=['Hi, I am Drip!','Watching your drain.','Tap me any time.','Need a hand?'];
+const FACTS=['Plastic and silt are the top causes of clogged drains.','Clearing drains before the monsoon prevents most street flooding.','A drain can lose half its flow before anyone notices.','Flow falling while the level rises is the classic blockage sign.'];
+let cur='',flash=null,fu=0,lastRainState=0;
+function look(ux,uy){const bw=$('dbody').offsetWidth;['pupil_l','pupil_r'].forEach(k=>EL[k].style.transform='translate('+ux*.04*bw+'px,'+uy*.035*bw+'px)')}
+function apply(n){const x=EX[n],sh=new Set(['body',x.e==='c'?'eyes_closed':'eyes_open',x.b,x.m,x.l,x.r].concat(x.x||[]));
+  if(x.e!=='c'){sh.add('pupil_l');sh.add('pupil_r')}if(prevRain)sh.add('umbrella');
+  for(const k in EL)EL[k].style.display=sh.has(k)?'block':'none';
+  $('dw').className='a-'+x.a;if(x.look)look(x.look[0],x.look[1])}
+function baseState(){if(!demo&&(!connected||Date.now()-lastRx>5000))return'sleep';if(dripFault)return'dizzy';if(lastLvl>=4)return'panic';if(lastLvl===3)return'alarmed';if(lastLvl===2)return'worried';if(lastLvl===1)return'curious';if(calBuf||wz.buf)return'think';return'idle'}
+function dripSay(t,ms=4500){const b=$('bub');b.textContent=t;b.classList.add('on');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('on'),ms)}
+function dripSync(){const t=Date.now(),n=t<fu?flash:baseState();if(n!==cur||prevRain!==lastRainState){const ch=n!==cur;cur=n;lastRainState=prevRain;apply(n);if(ch&&MSG[n]&&t>=fu)dripSay(MSG[n])}}
+function dripFlash(n,ms,text){flash=n;fu=Date.now()+ms;dripSync();if(text)dripSay(text);setTimeout(dripSync,ms+50)}
+document.addEventListener('pointermove',e=>{const x=EX[cur];if(!x||x.look)return;const b=$('dbody').getBoundingClientRect(),dx=e.clientX-(b.left+b.width/2),dy=e.clientY-(b.top+b.height*.57),d=Math.hypot(dx,dy)||1,k=Math.min(1,d/220);look(dx/d*k,dy/d*k)});
+(function bl(){setTimeout(()=>{const x=EX[cur];if(x&&x.e==='o'&&$('drip').offsetParent){['eyes_open','pupil_l','pupil_r'].forEach(k=>EL[k].style.display='none');EL.eyes_closed.style.display='block';setTimeout(()=>{if(EX[cur]===x)apply(cur)},140)}bl()},3000+Math.random()*2500)})();
+const dr=$('drip');let dg=null;
+dr.onpointerdown=e=>{dg={x:e.clientX,y:e.clientY,m:false};dr.setPointerCapture(e.pointerId);dr.style.transition='none';dr.style.cursor='grabbing'};
+dr.onpointermove=e=>{if(!dg)return;const dx=e.clientX-dg.x,dy=e.clientY-dg.y;if(Math.hypot(dx,dy)>5)dg.m=true;if(dg.m)dr.style.transform='translate('+dx+'px,'+dy+'px)'};
+dr.onpointerup=()=>{if(!dg)return;const m=dg.m;dg=null;dr.style.cursor='grab';dr.style.transition='transform .5s cubic-bezier(.3,1.6,.5,1)';dr.style.transform='none';if(m)dripSay('Whee! Back home.');else dripFlash('happy',1400,GREET[Math.floor(Math.random()*GREET.length)])};
+dr.ondblclick=()=>{const b=$('dbody');b.classList.remove('spin');void b.offsetWidth;b.classList.add('spin');dripSay(FACTS[Math.floor(Math.random()*FACTS.length)],6000)};
+dr.onpointerenter=()=>{if(cur==='idle'&&Date.now()>=fu)dripFlash('wave',1800)};
+$('dbody').addEventListener('animationend',e=>{if(e.target===$('dbody'))e.target.classList.remove('spin')});
+$('dripOn').checked=S.drip!==false;dr.style.display=$('dripOn').checked?'block':'none';
+$('dripOn').onchange=e=>{S.drip=e.target.checked;dr.style.display=S.drip?'block':'none';save()};
+setInterval(dripSync,1000);dripSync();
+$('bSetup').onclick=()=>{if(window.flowsense)window.flowsense.openSetup()};
+$('vol').value=S.vol*100;$('vol').style.setProperty('--v',S.vol*100+'%');$('snd').checked=!S.mute;$('theme').value=S.theme;applyTheme();buildSet();renderLog();draw();
+</script>
+</body>
+</html>

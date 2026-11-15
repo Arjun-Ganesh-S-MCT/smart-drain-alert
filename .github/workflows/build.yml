@@ -1,0 +1,129 @@
+name: Build and sign
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run dist:linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+
+  windows:
+    runs-on: windows-latest
+    env:
+      HAS_PFX: ${{ secrets.WIN_CSC_LINK != '' }}
+      HAS_SIGNPATH: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+
+      - name: Build and sign with a certificate file
+        if: env.HAS_PFX == 'true'
+        run: npm run dist:win
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_PASSWORD }}
+
+      - name: Build unsigned
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH != 'true'
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Build app folder for SignPath
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH == 'true'
+        run: npx electron-builder --win --dir --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload app folder
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH == 'true'
+        id: app
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app
+          path: dist/win-unpacked
+
+      - name: Sign app files with SignPath
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          artifact-configuration-slug: app
+          github-artifact-id: ${{ steps.app.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-app
+
+      - name: Package installers from signed files
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH == 'true'
+        run: npx electron-builder --win --prepackaged signed-app --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload installers
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH == 'true'
+        id: inst
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installers
+          path: dist/*.exe
+
+      - name: Sign installers with SignPath
+        if: env.HAS_PFX != 'true' && env.HAS_SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.inst.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-installers
+
+      - name: Collect files
+        shell: bash
+        run: |
+          mkdir release
+          if [ -d signed-installers ]; then cp signed-installers/*.exe release/; else cp dist/*.exe release/; fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: release/*.exe
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
