@@ -1,0 +1,48 @@
+{
+  "name": "smart-drainage-alert",
+  "version": "1.0.0",
+  "description": "Desktop monitor for the Smart Drainage Alert and Blockage Prediction System (ESP32-S3)",
+  "main": "main.js",
+  "author": { "name": "Smart Drainage Alert team", "email": "team@example.com" },
+  "license": "MIT",
+  "homepage": "https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.smartdrainage.alert",
+    "productName": "Smart Drainage Alert",
+    "copyright": "Copyright (c) 2026 Smart Drainage Alert contributors",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "src/**/*", "build/icon.png"],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "SmartDrainageAlert-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "SmartDrainageAlert-Portable-${version}.${ext}" },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "target": ["AppImage", "deb"],
+      "artifactName": "SmartDrainageAlert-${version}-linux.${ext}"
+    }
+  }
+}
