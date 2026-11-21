@@ -3,6 +3,11 @@
 FlowSense, made by TechMinds, is a desktop monitor for the Smart Drainage Alert and Blockage Prediction System, an ESP32-S3 prototype that watches flow, water level, turbidity and a rain plate and warns of a developing blockage. Runs on Windows 11 and Linux. Licensed under MIT.
 
 ## Features
+- Seven colour themes (coral, blue, green, purple, red, yellow, black), each in light and dark, plus follow-system
+- Several drains at once, history with daily summaries, calibration profiles, replay of recorded tests
+- Learn from recordings: trains a small model from labelled CSV files and exports it for the ESP32-S3
+- Desktop notifications, tray icon with alert colour, quiet hours, per-level sounds, English and Tamil
+- Physics touches: throwable Drip, spinning dials with momentum, sloshing water, falling rain
 - Live readings, condition (normal, possible blockage, blockage warning, overflow risk, overflow detected), likely cause, severity and confidence
 - Offline overflow prediction and anomaly detection, with sound alerts and the Drip mascot
 - USB serial or Wi-Fi connection to the ESP32-S3, SMS alerts through a GSM module on the board
@@ -57,3 +62,12 @@ On the first launch FlowSense shows a setup popup. The app itself needs nothing 
 
 ## App size
 `package.json` keeps only the English Chromium locale, uses maximum compression, and ships just three font files. The long rain sound was trimmed to 6 seconds. Check the real sizes in the Actions build output. A much smaller app (about 10 to 15 MB) would need a rewrite on Tauri with a native serial plugin.
+
+## Tests
+`npm test` runs the alert-rule tests in `tests/`. The workflow runs them before every build.
+
+## Firmware
+The ESP32-S3 sketch is in `firmware/`. See `firmware/README.md`.
+
+## Updates
+FlowSense checks the latest GitHub Release on start (switchable in Appearance and behaviour) and shows a Download button when a newer version exists. It does not install updates silently, because that would break the code-signing flow.

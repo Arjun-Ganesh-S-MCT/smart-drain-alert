@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FlowSense</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src ws: wss:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src ws: wss:">
 <style>
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;src:url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:600;font-style:normal;src:url("fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:700;font-style:normal;src:url("fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2")}
-:root{--bg:#e0d9d3;--sd:#bdb3ac;--sl:#f4f0ea;--tx:#6b625b;--mu:#948a82;--ok:#6aa381;--p1:#e0a63c;--p2:#f0903f;--p3:#d6483f;--p4:#a8212e;--ac:#fc8068}
+:root{--bg:#e0d9d3;--sd:#bdb3ac;--sl:#f4f0ea;--tx:#6b625b;--mu:#948a82;--ok:#6aa381;--p1:#e0a63c;--p2:#f0903f;--p3:#d6483f;--p4:#a8212e;--ac:#fc8068;--on:#ffffff}
 :root.dark{--bg:#2f2a27;--sd:#1f1b19;--sl:#3f3935;--tx:#e6ded8;--mu:#a1958c;--ac:#ff8f78}
 *{box-sizing:border-box}html,body{margin:0}
-body{background:var(--bg);color:var(--tx);font-family:"JetBrains Mono","Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;padding:22px;font-size:14px}
+body{background:var(--bg);color:var(--tx);font-family:"JetBrains Mono","Cascadia Mono",Consolas,"DejaVu Sans Mono","Nirmala UI","Noto Sans Tamil",Latha,monospace;padding:22px;font-size:14px}
 h1{font-size:1.3rem;margin:0;font-weight:700;color:var(--tx)}
 h2{font-size:1rem;margin:0 0 14px;color:var(--ac)}
 .sub{color:var(--mu);font-size:.8rem}
@@ -33,7 +33,7 @@ label{display:block;font-size:.78rem;color:var(--mu);margin-bottom:6px}
 .stat{font-size:1.9rem;font-weight:700;margin:6px 0 2px;color:var(--tx)}.unit{font-size:.8rem;color:var(--mu);font-weight:400}
 .k{}.k label::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ac);box-shadow:inset 2px 2px 3px rgba(0,0,0,.25);margin-right:8px}
 .c1{--k:#fc8068}.c2{--k:#e8761f}.c3{--k:var(--ac)}.c4{--k:var(--ac)}
-#bConn,#bConn:hover{background:var(--ac);color:#fff}
+#bConn,#bConn:hover{background:var(--ac);color:var(--on)}
 .dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px;background:var(--mu)}
 .status{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
 .orb{width:100px;height:100px;border-radius:50%;display:grid;place-items:center;flex:none}
@@ -60,14 +60,14 @@ svg text{fill:var(--mu);font-size:11px;font-family:inherit}
 @keyframes fw{to{stroke-dashoffset:-36}}
 .sw{position:relative;width:54px;height:28px;display:inline-block}.sw input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
 .sw i{position:absolute;inset:0;border-radius:99px;background:var(--bg);box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl);transition:background .15s}
-.sw i::after{content:"";position:absolute;top:3px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-2px -2px 5px var(--sl);transition:left .15s}
+.sw i::after{content:"";position:absolute;top:3px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-2px -2px 5px var(--sl);transition:left .35s cubic-bezier(.34,1.8,.64,1)}
 .sw input:checked+i{background:var(--ac)}.sw input:checked+i::after{left:28px}.sw input:focus-visible+i{outline:2px solid var(--ac);outline-offset:3px}
 input[type=range]{-webkit-appearance:none;appearance:none;height:12px;border-radius:99px;background:linear-gradient(var(--ac),var(--ac)) 0 0/var(--v,50%) 100% no-repeat var(--bg);box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;border:0;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
 input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;border:0;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
 select{appearance:none;-webkit-appearance:none;border-radius:99px;padding-right:36px;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23948a82' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center}
 .seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:99px}.seg button{box-shadow:none;background:transparent;padding:8px 16px}
-.seg button.on{background:var(--ac);color:#fff;box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
+.seg button.on{background:var(--ac);color:var(--on);box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
 details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1.6}
 #drip{position:fixed;right:22px;bottom:16px;width:150px;z-index:15;touch-action:none;cursor:grab;user-select:none}
 #drip::after{content:"";display:block;width:92px;height:12px;margin:8px auto 0;border-radius:50%;background:var(--sd);opacity:.55;filter:blur(4px)}
@@ -100,6 +100,17 @@ details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1
 @media (prefers-reduced-motion:reduce){#dw,#dbody,.dp{animation:none!important}}
 #smsLog{height:110px;overflow:auto;padding:10px;margin:12px 0 0;font-size:.75rem;white-space:pre-wrap}
 .fld{margin-top:14px}
+button{transition:transform .3s cubic-bezier(.34,1.8,.64,1),box-shadow .15s,color .15s}button:active{transform:scale(.94)}
+#dsq{transform-origin:50% 100%}
+.inc{animation:d-drop .5s cubic-bezier(.3,1.6,.5,1)}@keyframes d-drop{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+.tile{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;min-width:150px;padding:12px 16px;border-radius:18px}
+.tile.on{box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}.tile b{font-size:.9rem}.tile span{font-size:.75rem;color:var(--mu)}
+.dot2{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;box-shadow:inset 2px 2px 3px rgba(0,0,0,.25)}
+.swatch{width:34px;height:34px;padding:0;border-radius:50%}.swatch i{display:block;width:16px;height:16px;border-radius:50%;margin:auto}
+.swatch.on{box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
+table.h{width:100%;border-collapse:collapse;font-size:.78rem}table.h td,table.h th{padding:6px 8px;text-align:left}table.h th{color:var(--mu)}
+html.calm *,html.calm *::before{animation:none!important;transition:none!important}
+#upd{display:none;margin-bottom:20px;padding:12px 18px;border-radius:18px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 #rep{display:none}
 @media print{body>*:not(#rep){display:none!important}#rep{display:block!important;color:#000;background:#fff;font-family:sans-serif}#rep td,#rep th{border:1px solid #888;padding:4px 8px;font-size:12px}#rep table{border-collapse:collapse;width:100%}}
 </style>
@@ -121,7 +132,7 @@ details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1
     <div style="flex:1;min-width:240px">
       <div class="cond" id="cond">Waiting for data</div>
       <div id="cause" class="sub">Connect the board or start demo mode.</div>
-      <div id="evid" class="sub"></div><div id="pred" class="sub" style="margin-top:6px;color:var(--ac)"></div><div id="hl" class="sub" style="margin-top:6px"></div>
+      <div id="evid" class="sub"></div><div id="pred" class="sub" style="margin-top:6px;color:var(--ac)"></div><div id="hl" class="sub" style="margin-top:6px"></div><div id="ml" class="sub" style="margin-top:6px;color:var(--ac)"></div><div id="upd" class="raised"><span id="updT"></span><button id="updB">Download</button></div>
       <div id="pills"></div>
     </div>
   </div>
@@ -142,9 +153,9 @@ details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1
 <svg viewBox="0 0 560 200" width="100%" role="img" aria-label="Animated drain model">
  <g id="drops" style="display:none" fill="var(--ac)"><circle cx="50" cy="12" r="4"/><circle cx="80" cy="22" r="4"/><circle cx="110" cy="10" r="4"/></g>
  <rect x="20" y="30" width="120" height="140" rx="10" fill="none" stroke="var(--mu)" stroke-width="3"/>
- <rect id="water" x="23" y="168" width="114" height="0" fill="#fc8068" opacity=".6"/>
+ <path id="water" d="" fill="var(--ac)" opacity=".6"/>
  <path d="M140 100 H500 V160 H80 V170" fill="none" stroke="var(--mu)" stroke-width="16" opacity=".25"/>
- <path class="pipe" id="pipe" d="M140 100 H500 V160 H80 V170" fill="none" stroke="#fc8068" stroke-width="4"/>
+ <path class="pipe" id="pipe" d="M140 100 H500 V160 H80 V170" fill="none" stroke="var(--ac)" stroke-width="4"/>
  <circle cx="250" cy="100" r="18" fill="var(--bg)" stroke="var(--ac)" stroke-width="3"/><text x="238" y="132">pump</text>
  <rect id="valve" x="380" y="86" width="26" height="28" rx="6" fill="var(--bg)" stroke="var(--ac)" stroke-width="3"/><text x="372" y="132">valve</text>
  <circle id="blk" cx="440" cy="100" r="0" fill="#ef4444"/><text x="52" y="188">container</text>
@@ -152,7 +163,7 @@ details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1
   <div class="raised card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Trend</h2>
     <select id="win" style="width:auto"><option value="90">Last 90</option><option value="300">Last 300</option><option value="900">Last 900</option></select></div>
     <div class="inset" style="padding:8px"><canvas id="cv" width="640" height="190"></canvas></div>
-    <div class="sub" style="margin-top:8px"><span style="color:#fc8068">Flow (blue)</span> and <span style="color:#6b625b">water level (dark)</span></div></div>
+    <div class="sub" style="margin-top:8px"><span style="color:var(--ac)">Flow</span> and <span style="color:var(--tx)">water level</span></div></div>
 </div>
 
 <div class="wide">
@@ -191,7 +202,7 @@ details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1
 
 <section class="raised card" style="margin-bottom:24px"><h2>Calibration dials</h2>
   <div class="set" id="set"></div>
-  <div class="row" style="margin-top:14px"><label style="margin:0">Theme</label><select id="theme" style="width:auto"><option value="">Light</option><option value="dark">Dark</option></select><button id="bDef">Reset thresholds</button></div>
+  <div class="row" style="margin-top:14px"><button id="bDef">Reset thresholds</button></div>
   <p class="sub">Turn a dial by dragging it, using the mouse wheel, or the arrow keys. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically.</p></section>
 
 <section class="raised card"><h2>Firmware console</h2>
@@ -225,11 +236,17 @@ void loop(){
   if(wsOn)ws.loop();
 }</pre></details></section>
 
-<div id="drip" aria-hidden="true"><div id="bub" class="raised"></div><div id="dw"><div id="dbody"></div></div></div>
+<div id="drip" aria-hidden="true"><div id="bub" class="raised"></div><div id="dsq"><div id="dw"><div id="dbody"></div></div></div></div>
 <div id="rep"></div>
+<script src="core.js"></script>
 <script>
 const DRIP={"arm_left":[70,163,"drip/arm_left.png"],"arm_right":[69,163,"drip/arm_right.png"],"arm_up":[100,175,"drip/arm_up.png"],"arm_wave":[131,126,"drip/arm_wave.png"],"body":[174,216,"drip/body.png"],"brows_angry":[147,46,"drip/brows_angry.png"],"brows_up":[155,51,"drip/brows_up.png"],"brows_worried":[192,37,"drip/brows_worried.png"],"eyes_closed":[190,39,"drip/eyes_closed.png"],"eyes_open":[196,87,"drip/eyes_open.png"],"hardhat":[125,93,"drip/hardhat.png"],"mouth_open":[56,43,"drip/mouth_open.png"],"mouth_scream":[87,61,"drip/mouth_scream.png"],"mouth_sleep":[93,21,"drip/mouth_sleep.png"],"mouth_smile":[58,25,"drip/mouth_smile.png"],"mouth_worried":[79,31,"drip/mouth_worried.png"],"pupil_l":[44,44,"drip/pupil_l.png"],"pupil_r":[41,44,"drip/pupil_r.png"],"stars":[96,94,"drip/stars.png"],"sweat_drop":[67,91,"drip/sweat_drop.png"],"tick":[89,73,"drip/tick.png"],"umbrella":[105,94,"drip/umbrella.png"],"zzz":[120,94,"drip/zzz.png"]};
-const $=id=>document.getElementById(id);
+let QUIET=false;
+const DUM=new Proxy(function(){},{get:(t,k)=>k===Symbol.toPrimitive?()=>'':DUM,set:()=>true,apply:()=>DUM,construct:()=>DUM});
+const $=id=>QUIET?DUM:document.getElementById(id);
+const tr=s=>window.trans?window.trans(s):s;
+const trEv=s=>window.transEv?window.transEv(s):s;
+const ICO=['✓','?','▲','■','✖'];
 const DEF={dropWarn:25,dropBlock:50,rise:1,risk:4,over:2,turb:30};
 const NAMES={dropWarn:'Flow drop: possible (%)',dropBlock:'Flow drop: blockage (%)',rise:'Level rise warning (cm)',risk:'Overflow risk distance (cm)',over:'Overflow distance (cm)',turb:'Turbidity change (%)'};
 let S={cfg:{...DEF},base:null,inc:[],vol:.6,mute:false,theme:''};
@@ -237,42 +254,27 @@ try{Object.assign(S,JSON.parse(localStorage.getItem('dra')||'{}'))}catch(e){}
 S.inc.forEach(i=>i.time=new Date(i.time));
 S.sms=Object.assign({on:false,nums:'',min:3,cool:5},S.sms);if(S.drip===undefined)S.drip=true;
 const save=()=>{try{localStorage.setItem('dra',JSON.stringify(S))}catch(e){}};
-const C=()=>{const c=S.cfg;return{dw:c.dropWarn/100,db:c.dropBlock/100,rise:c.rise,risk:c.risk,over:c.over,tb:c.turb/100}};
+const C=()=>Core.conf(S.cfg);
 const ST=[{n:'Normal',c:'#22b573',s:'None'},{n:'Possible blockage',c:'#e6b800',s:'Low'},{n:'Blockage warning',c:'#e8761f',s:'Medium'},{n:'Overflow risk',c:'#ef4444',s:'High'},{n:'Overflow detected',c:'#c0143c',s:'Critical'}];
 const msg=t=>$('msg').textContent=t;
 
 const SA={};['click','connect','disconnect','baseline','rain','possible','warning','risk','overflow','predict','normal'].forEach(n=>{const a=new Audio('sounds/'+n+'.mp3');a.preload='auto';SA[n]=a});
-const play=(n,idle)=>{const a=SA[n];if(!a||S.mute)return;if(idle&&!a.paused&&!a.ended)return;a.volume=Math.max(0,Math.min(1,S.vol));a.currentTime=0;a.play().catch(()=>{})};
+const play=(n,idle)=>{const a=SA[n];if(!a||S.mute||(window.soundOff&&soundOff(n)))return;if(idle&&!a.paused&&!a.ended)return;a.volume=Math.max(0,Math.min(1,S.vol));a.currentTime=0;a.play().catch(()=>{})};
 document.addEventListener('click',e=>{if(e.target.closest('button'))play('click')});
 $('snd').onchange=e=>{S.mute=!e.target.checked;save()};
 $('vol').oninput=e=>{S.vol=e.target.value/100;e.target.style.setProperty('--v',e.target.value+'%');save()};
 
 let hist=[],lastLvl=0,acked=false,calBuf=null,rec={on:false,rows:[]},wz={step:0,res:[],buf:null,sug:null},lastRx=0,connected=false,prevRain=0,predWarn=false,demo=null,scen='normal',tick=0;
+let AC='#fc8068',MU='#948a82',TX='#6b625b';
 const mean=(a,k)=>a.reduce((s,x)=>s+x[k],0)/a.length;
 const sd=(a,k,fl)=>{const m=mean(a,k);return Math.max(Math.sqrt(a.reduce((s,x)=>s+(x[k]-m)**2,0)/a.length),fl)};
 function mkBase(b){S.base={flow:mean(b,'flow'),dist:mean(b,'dist'),turb:mean(b,'turb'),sf:sd(b,'flow',Math.max(.05,.05*mean(b,'flow'))),sd:sd(b,'dist',.2),st:sd(b,'turb',10)};save()}
 
-function health(d){const r=hist.slice(-20),i=[];const bad=d.dist<=0||d.dist>600;
-  if(bad)i.push('Ultrasonic reading out of range, check wiring');
-  if(d.turb<=0||d.turb>=4095)i.push('Turbidity reading at its limit');
-  if(r.length>=20){if(r.every(q=>q.l===d.dist))i.push('Ultrasonic value is not changing');if(d.flow>0&&r.every(q=>q.f===d.flow))i.push('Flow value is frozen')}
-  if(S.base&&d.flow===0)i.push('Flow is 0: blockage or sensor fault');
-  return{i,bad}}
+function health(d){return Core.health(d,hist,S.base)}
 
-function predictEta(){const p=hist.slice(-20);if(p.length<10)return null;const n=p.length,t0=p[0].t;let sx=0,sy=0,sxy=0,sxx=0;
-  p.forEach(q=>{const x=(q.t-t0)/1000;sx+=x;sy+=q.l;sxy+=x*q.l;sxx+=x*x});const den=n*sxx-sx*sx;if(!den)return null;
-  const m=(n*sxy-sx*sy)/den,cur=p[n-1].l;if(m>-.005||cur<=S.cfg.over)return null;return(cur-S.cfg.over)/-m}
+function predictEta(){return Core.predictEta(hist,S.cfg.over)}
 
-function evaluate(d,h){const c=C(),b=S.base;let lvl=0,ev=[],pts=0,fd=0,rise=0,td=0,z=0,cause='No fault indicated';
-  if(b){fd=b.flow>0?1-d.flow/b.flow:0;rise=b.dist-d.dist;td=b.turb>0?(d.turb-b.turb)/b.turb:0;z=Math.max(Math.abs(d.flow-b.flow)/b.sf,h.bad?0:Math.abs(d.dist-b.dist)/b.sd);
-    if(fd>.05)ev.push('Flow '+(-fd*100).toFixed(0)+'% vs baseline');if(rise>.2)ev.push('Level +'+rise.toFixed(1)+' cm');if(Math.abs(td)>.1)ev.push('Turbidity '+(td>0?'+':'')+(td*100).toFixed(0)+'%');if(z>3)ev.push('Anomaly '+z.toFixed(1)+' σ')}
-  if(d.rain)ev.push('Rain plate wet');
-  const blk=fd>=c.dw,rising=rise>=c.rise,dirty=td>=c.tb;
-  if(b){if(blk&&(rising||dirty))lvl=1;if(fd>=c.db&&rising)lvl=2;if(z>4&&fd>.1&&!lvl)lvl=1}
-  if(!h.bad){if(d.dist<=c.risk)lvl=Math.max(lvl,3);if(d.dist<=c.over)lvl=4}
-  if(blk&&d.rain)cause='Blockage and rainfall likely both contributing';else if(blk)cause='Likely blockage: flow falling'+(rising?' while level rises':'');else if(d.rain&&rising)cause='Rainfall likely contributing to rising level';else if(lvl>=3)cause='Water level high; cause unclear';else if(lvl)cause='Unusual pattern against baseline';
-  if(blk)pts+=fd>=c.db?40:25;if(rising)pts+=25;if(dirty)pts+=15;if(d.rain&&rising)pts+=10;if(lvl>=3)pts+=15;if(z>3)pts+=10;
-  return{lvl,ev,cause,conf:lvl?Math.min(95,pts):0,fd,rise}}
+function evaluate(d,h){return Core.evaluate(d,h,S.base,S.cfg)}
 
 function onData(d){d={flow:+d.flow||0,dist:+d.dist||0,turb:+d.turb||0,rain:d.rain?1:0};lastRx=Date.now();$('banT').dataset.nodata='';
   if(calBuf){calBuf.push(d);msg('Setting baseline… '+calBuf.length+'/10');if(calBuf.length>=10){mkBase(calBuf);calBuf=null;msg('Baseline saved. Keep the valve fully open.');play('baseline');dripFlash('cheer',2500,'Baseline saved!')}}
@@ -281,32 +283,32 @@ function onData(d){d={flow:+d.flow||0,dist:+d.dist||0,turb:+d.turb||0,rain:d.rai
   if(d.rain&&!prevRain){play('rain');dripSay('Rain detected. Umbrella up!')}prevRain=d.rain;
   $('vFlow').textContent=d.flow.toFixed(2);$('vDist').textContent=d.dist.toFixed(1);$('vTurb').textContent=Math.round(d.turb);$('vRain').textContent=d.rain?'Wet':'Dry';
   const b=S.base;if(b){$('sFlow').textContent='Baseline '+b.flow.toFixed(2);$('sDist').textContent='Baseline '+b.dist.toFixed(1)+' cm';$('sTurb').textContent='Baseline '+Math.round(b.turb)}
-  $('cond').textContent=s.n;$('cond').style.color=s.c;$('orb').style.background=s.c;
-  $('cause').textContent=r.cause;$('evid').textContent=r.ev.join(' · ')||(b?'Readings match baseline':'Set a baseline while flow is normal');
-  $('pills').innerHTML=r.lvl?'<span class="pill inset" style="color:'+s.c+'">Severity: '+s.s+'</span><span class="pill inset" style="color:#fc8068">Confidence: '+r.conf+'% (estimate)</span>':'';
-  $('hl').innerHTML=h.i.length?'<span style="color:#e8761f">Sensor check: '+h.i.join('; ')+'</span>':'Sensors look healthy';
+  $('cond').textContent=ICO[r.lvl]+' '+tr(s.n);$('cond').style.color=s.c;$('orb').style.background=s.c;
+  $('cause').textContent=tr(r.cause);$('evid').textContent=trEv(r.ev.join(' · '))||tr(b?'Readings match baseline':'Set a baseline while flow is normal');
+  $('pills').innerHTML=r.lvl?'<span class="pill inset" style="color:'+s.c+'">'+tr('Severity')+': '+tr(s.s)+'</span><span class="pill inset" style="color:#fc8068">'+tr('Confidence')+': '+r.conf+'% '+tr('(estimate)')+'</span>':'';
+  $('hl').innerHTML=h.i.length?'<span style="color:#e8761f">'+tr('Sensor check')+': '+h.i.join('; ')+'</span>':tr('Sensors look healthy');
   const eta=predictEta();if(eta&&eta<1800){$('pred').textContent='Prediction: overflow in about '+(eta<90?Math.round(eta)+' s':(eta/60).toFixed(1)+' min')+' at the current rate';if(eta<180&&!predWarn){predWarn=true;play('predict');dripSay('Overflow predicted in about '+Math.max(1,Math.round(eta/60))+' min.')}}else{$('pred').textContent='';predWarn=false}
-  if(r.lvl>lastLvl){S.inc.unshift({time:new Date(),cond:s.n,cause:r.cause,ev:r.ev.join('; '),sev:s.s,conf:r.conf,lvl:r.lvl,c:s.c});S.inc=S.inc.slice(0,200);save();renderLog();acked=false;
-    play(['','possible','warning','risk','overflow'][r.lvl]);maybeSms(r,s)}
+  if(r.lvl>lastLvl){S.inc.unshift({node:window.curNodeName||'',time:new Date(),cond:s.n,cause:r.cause,ev:r.ev.join('; '),sev:s.s,conf:r.conf,lvl:r.lvl,c:s.c});S.inc=S.inc.slice(0,200);save();renderLog();acked=false;
+    play(['','possible','warning','risk','overflow'][r.lvl]);maybeSms(r,s);if(window.notifyLevel)notifyLevel(r,s)}
   else if(r.lvl===0&&lastLvl>0){play('normal');smsLastLvl=0;dripFlash('cheer',2500,'Back to normal!')}
   lastLvl=r.lvl;
   const ban=$('ban');if(r.lvl>=3&&!acked){ban.style.display='flex';$('banT').textContent=s.n+': '+r.cause}else ban.style.display='none';
   hist.push({t:Date.now(),f:d.flow,l:d.dist});if(hist.length>900)hist.shift();
-  if(rec.on){rec.rows.push([new Date().toISOString(),$('lab').value,d.flow,d.dist,d.turb,d.rain,s.n].join(','));$('recN').textContent=rec.rows.length+' rows'}
-  dripFault=h.bad||h.i.some(x=>/not changing|frozen|limit/.test(x));dripSync();drawDrain(d,r);draw()}
+  if(rec.on&&!QUIET){rec.rows.push([new Date().toISOString(),$('lab').value,d.flow,d.dist,d.turb,d.rain,s.n].join(','));$('recN').textContent=rec.rows.length+' rows'}
+  dripFault=h.bad||h.i.some(x=>/not changing|frozen|limit/.test(x));if(!QUIET){dripSync();drawDrain(d,r);draw()}}
 
 function drawDrain(d,r){const b=S.base,ref=(b?b.dist:15)+3,over=S.cfg.over,p=Math.max(0,Math.min(1,1-(d.dist-over)/Math.max(ref-over,1)));
-  $('water').setAttribute('height',p*134);$('water').setAttribute('y',167-p*134);
+  setWater(p);
   const fl=b&&b.flow>0?d.flow/b.flow:(d.flow>0?1:0);$('pipe').style.setProperty('--sp',d.flow>.05?Math.max(.4,Math.min(6,1.2/Math.max(fl,.1)))+'s':'0s');$('pipe').style.setProperty('--ps',d.flow>.05?'running':'paused');
   $('blk').setAttribute('r',r.fd>=C().dw?Math.min(16,6+r.fd*14):0);$('drops').style.display=d.rain?'block':'none'}
 
 function draw(){const cv=$('cv'),x=cv.getContext('2d'),w=cv.width,h=cv.height,n=+$('win').value,v=hist.slice(-n);x.clearRect(0,0,w,h);
   const line=(k,col,inv)=>{if(v.length<2)return;const a=v.map(p=>p[k]);let mn=Math.min(...a),mx=Math.max(...a);if(mx-mn<.5)mx=mn+.5;x.beginPath();x.lineWidth=3;x.lineJoin='round';x.strokeStyle=col;
     a.forEach((y,i)=>{const px=i/(v.length-1)*(w-20)+10,q=(y-mn)/(mx-mn),py=(inv?q:1-q)*(h-30)+15;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()};
-  line('f','#fc8068',false);line('l','#6b625b',true)}
+  line('f',AC,false);line('l',TX,true)}
 
 function renderLog(){const m=+$('flt').value,l=S.inc.filter(i=>i.lvl>=m);
-  $('log').innerHTML=l.map(i=>'<div class="inc inset" style="border-left:6px solid '+i.c+'"><b style="color:'+i.c+'">'+i.cond+'</b> · '+i.sev+' severity, '+i.conf+'% confidence<br>'+i.cause+'<br><span class="sub">'+i.ev+'<br>'+i.time.toLocaleString()+'</span></div>').join('')||'<div class="sub" style="padding:10px">No incidents yet.</div>'}
+  $('log').innerHTML=l.map(i=>'<div class="inc inset" style="border-left:6px solid '+i.c+'"><b style="color:'+i.c+'">'+(i.node?i.node+' · ':'')+tr(i.cond)+'</b> · '+tr(i.sev)+' '+tr('severity')+', '+i.conf+'% '+tr('confidence')+'<br>'+tr(i.cause)+'<br><span class="sub">'+trEv(i.ev)+'<br>'+i.time.toLocaleString()+'</span></div>').join('')||'<div class="sub" style="padding:10px">No incidents yet.</div>'}
 $('flt').onchange=renderLog;$('win').onchange=draw;
 $('bClr').onclick=()=>{if(confirm('Clear all saved incidents?')){S.inc=[];save();renderLog()}};
 const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()};
@@ -329,21 +331,19 @@ $('bCal').onclick=()=>{if(!connected&&!demo){msg('Connect the board or start dem
 const DL={dropWarn:[5,90,1,'%'],dropBlock:[10,95,1,'%'],rise:[.2,5,.1,'cm'],risk:[1,20,.5,'cm'],over:[.5,10,.5,'cm'],turb:[5,100,1,'%']};
 const pt=(r,a)=>[(65+r*Math.sin(a*Math.PI/180)).toFixed(1),(65-r*Math.cos(a*Math.PI/180)).toFixed(1)];
 function dialDraw(el){const k=el.dataset.k,[mn,mx,st,u]=DL[k],v=S.cfg[k],f=Math.max(0,Math.min(1,(v-mn)/(mx-mn))),a=-135+270*f;let t='';
-  for(let i=0;i<28;i++){const g=-135+270*i/27,p1=pt(55,g),p2=pt(61,g);t+='<line x1="'+p1[0]+'" y1="'+p1[1]+'" x2="'+p2[0]+'" y2="'+p2[1]+'" stroke="'+(i/27<=f+1e-6?'#fc8068':'#b5aba3')+'" stroke-width="2.5" stroke-linecap="round"/>'}
+  for(let i=0;i<28;i++){const g=-135+270*i/27,p1=pt(55,g),p2=pt(61,g);t+='<line x1="'+p1[0]+'" y1="'+p1[1]+'" x2="'+p2[0]+'" y2="'+p2[1]+'" stroke="'+(i/27<=f+1e-6?AC:MU)+'" stroke-width="2.5" stroke-linecap="round"/>'}
   const s0=pt(47,-135),s1=pt(47,135),e=pt(47,a);
-  t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 1 1 '+s1[0]+' '+s1[1]+'" fill="none" stroke="#cfc6bf" stroke-width="5" stroke-linecap="round"/>';
-  if(f>0)t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 '+(270*f>180?1:0)+' 1 '+e[0]+' '+e[1]+'" fill="none" stroke="#fc8068" stroke-width="5" stroke-linecap="round"/>';
+  t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 1 1 '+s1[0]+' '+s1[1]+'" fill="none" stroke="var(--sd)" stroke-width="5" stroke-linecap="round"/>';
+  if(f>0)t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 '+(270*f>180?1:0)+' 1 '+e[0]+' '+e[1]+'" fill="none" stroke="var(--ac)" stroke-width="5" stroke-linecap="round"/>';
   el.querySelector('svg').innerHTML=t;el.querySelector('.knob').style.setProperty('--a',a+'deg');el.setAttribute('aria-valuenow',v);el.parentNode.querySelector('.dv').textContent=v+' '+u}
 function dialSet(el,v){const k=el.dataset.k,[mn,mx,st]=DL[k];v=+(Math.round(Math.min(mx,Math.max(mn,v))/st)*st).toFixed(2);S.cfg[k]=v;save();dialDraw(el)}
 function buildSet(){$('set').innerHTML=Object.keys(NAMES).map(k=>'<div class="dialw"><div class="dial" data-k="'+k+'" tabindex="0" role="slider" aria-label="'+NAMES[k]+'" aria-valuemin="'+DL[k][0]+'" aria-valuemax="'+DL[k][1]+'"><svg viewBox="0 0 130 130"></svg><div class="knob"><i></i></div></div><div class="dv"></div><label style="margin:0">'+NAMES[k]+'</label></div>').join('');
   $('set').querySelectorAll('.dial').forEach(el=>{const k=el.dataset.k,[mn,mx,st]=DL[k];dialDraw(el);
-    const mv=e=>{const b=el.getBoundingClientRect();let a=Math.atan2(e.clientX-b.left-b.width/2,-(e.clientY-b.top-b.height/2))*180/Math.PI;if(Math.abs(a)>135)a=a<0?-135:135;dialSet(el,mn+(a+135)/270*(mx-mn))};
-    el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);mv(e)};el.onpointermove=e=>{if(el.hasPointerCapture(e.pointerId))mv(e)};
+    let lv=0,lt=0,pv=0;const mv=e=>{const b=el.getBoundingClientRect();let a=Math.atan2(e.clientX-b.left-b.width/2,-(e.clientY-b.top-b.height/2))*180/Math.PI;if(Math.abs(a)>135)a=a<0?-135:135;dialSet(el,mn+(a+135)/270*(mx-mn));const t=performance.now();if(lt)lv=(S.cfg[k]-pv)/Math.max(.016,(t-lt)/1000);pv=S.cfg[k];lt=t};
+    el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);mv(e)};el.onpointermove=e=>{if(el.hasPointerCapture(e.pointerId))mv(e)};el.onpointerup=()=>{if(window.fling&&lt)fling(el,k,performance.now()-lt<90?lv:0);lt=0;lv=0};
     el.onwheel=e=>{e.preventDefault();dialSet(el,S.cfg[k]+(e.deltaY<0?1:-1)*st)};
     el.onkeydown=e=>{const d={ArrowUp:1,ArrowRight:1,ArrowDown:-1,ArrowLeft:-1}[e.key];if(d){e.preventDefault();dialSet(el,S.cfg[k]+d*st)}}})}
 $('bDef').onclick=()=>{S.cfg={...DEF};save();buildSet()};
-function applyTheme(){document.documentElement.className=S.theme}
-$('theme').onchange=e=>{S.theme=e.target.value;applyTheme();save()};
 $('bAck').onclick=()=>{acked=true;$('ban').style.display='none'};
 setInterval(()=>{if(lastLvl>=3&&!acked)play(lastLvl===4?'overflow':'risk',true)},3000);
 
@@ -400,8 +400,8 @@ function smsLog(t){smsL.unshift(new Date().toLocaleTimeString()+'  '+t);smsL=sms
 function smsSend(text,test){const n=numList();if(!n.length){smsLog('No valid mobile number');return false}
   if(!tx({cmd:'sms',to:n[0],msg:text})){smsLog('Not sent: board not connected');return false}
   n.slice(1).forEach(to=>tx({cmd:'sms',to,msg:text}));smsLog((test?'Test sent to ':'Sent to ')+n.join(', ')+' via the board');return true}
-function maybeSms(r,s){if(!S.sms.on||r.lvl<S.sms.min)return;if(Date.now()-smsLast<S.sms.cool*60000&&r.lvl<=smsLastLvl)return;
-  const m=('Drainage alert: '+s.n+'. '+r.cause+'. '+r.ev.join(', ')+'. '+new Date().toLocaleString('en-IN')).replace(/[^\x20-\x7e]/g,'').slice(0,160);
+function maybeSms(r,s){if(!S.sms.on||r.lvl<Math.max(S.sms.min,window.quietSmsMin?quietSmsMin():0))return;if(Date.now()-smsLast<S.sms.cool*60000&&r.lvl<=smsLastLvl)return;
+  const m=('FlowSense'+(window.curNodeName?' ['+window.curNodeName+']':'')+': '+s.n+'. '+r.cause+'. '+r.ev.join(', ')+'. '+new Date().toLocaleString('en-IN')).replace(/[^\x20-\x7e]/g,'').slice(0,160);
   if(smsSend(m,false)){smsLast=Date.now();smsLastLvl=r.lvl}}
 $('smsOn').checked=S.sms.on;$('smsNum').value=S.sms.nums;$('smsMin').value=S.sms.min;$('smsCool').value=S.sms.cool;
 $('smsOn').onchange=e=>{S.sms.on=e.target.checked;save()};$('smsNum').oninput=e=>{S.sms.nums=e.target.value;save()};
@@ -437,7 +437,7 @@ function apply(n){const x=EX[n],sh=new Set(['body',x.e==='c'?'eyes_closed':'eyes
   for(const k in EL)EL[k].style.display=sh.has(k)?'block':'none';
   $('dw').className='a-'+x.a;if(x.look)look(x.look[0],x.look[1])}
 function baseState(){if(!demo&&(!connected||Date.now()-lastRx>5000))return'sleep';if(dripFault)return'dizzy';if(lastLvl>=4)return'panic';if(lastLvl===3)return'alarmed';if(lastLvl===2)return'worried';if(lastLvl===1)return'curious';if(calBuf||wz.buf)return'think';return'idle'}
-function dripSay(t,ms=4500){const b=$('bub');b.textContent=t;b.classList.add('on');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('on'),ms)}
+function dripSay(t,ms=4500){const b=$('bub');b.textContent=tr(t);b.classList.add('on');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('on'),ms)}
 function dripSync(){const t=Date.now(),n=t<fu?flash:baseState();if(n!==cur||prevRain!==lastRainState){const ch=n!==cur;cur=n;lastRainState=prevRain;apply(n);if(ch&&MSG[n]&&t>=fu)dripSay(MSG[n])}}
 function dripFlash(n,ms,text){flash=n;fu=Date.now()+ms;dripSync();if(text)dripSay(text);setTimeout(dripSync,ms+50)}
 document.addEventListener('pointermove',e=>{const x=EX[cur];if(!x||x.look)return;const b=$('dbody').getBoundingClientRect(),dx=e.clientX-(b.left+b.width/2),dy=e.clientY-(b.top+b.height*.57),d=Math.hypot(dx,dy)||1,k=Math.min(1,d/220);look(dx/d*k,dy/d*k)});
@@ -453,7 +453,8 @@ $('dripOn').checked=S.drip!==false;dr.style.display=$('dripOn').checked?'block':
 $('dripOn').onchange=e=>{S.drip=e.target.checked;dr.style.display=S.drip?'block':'none';save()};
 setInterval(dripSync,1000);dripSync();
 $('bSetup').onclick=()=>{if(window.flowsense)window.flowsense.openSetup()};
-$('vol').value=S.vol*100;$('vol').style.setProperty('--v',S.vol*100+'%');$('snd').checked=!S.mute;$('theme').value=S.theme;applyTheme();buildSet();renderLog();draw();
+$('vol').value=S.vol*100;$('vol').style.setProperty('--v',S.vol*100+'%');$('snd').checked=!S.mute;buildSet();renderLog();draw();
 </script>
+<script src="features.js"></script>
 </body>
 </html>

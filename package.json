@@ -1,11 +1,11 @@
 {
   "name": "flowsense",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "FlowSense by TechMinds: desktop monitor for the Smart Drainage Alert and Blockage Prediction System (ESP32-S3)",
   "main": "main.js",
   "author": {
     "name": "Smart Drainage Alert team",
-    "email": "arjunganeshs.mct2026@citchennai.net"
+    "email": "team@example.com"
   },
   "license": "MIT",
   "homepage": "https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert",
@@ -13,7 +13,8 @@
     "postinstall": "node scripts/copy-fonts.js",
     "start": "electron .",
     "dist:win": "electron-builder --win --publish never",
-    "dist:linux": "electron-builder --linux --publish never"
+    "dist:linux": "electron-builder --linux --publish never",
+    "test": "node --test tests/core.test.js"
   },
   "dependencies": {},
   "devDependencies": {
@@ -33,7 +34,7 @@
       "main.js",
       "preload.js",
       "src/**/*",
-      "build/icon.png"
+      "build/*.png"
     ],
     "win": {
       "icon": "build/icon.png",
@@ -75,5 +76,9 @@
     "electronLanguages": [
       "en-US"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert.git"
   }
 }

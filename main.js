@@ -1,8 +1,9 @@
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, dialog, shell, ipcMain, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
+const pkg = require('./package.json');
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
@@ -20,6 +21,72 @@ const sh = (cmd, args) => new Promise(res =>
 
 let win = null;
 let setupWin = null;
+let tray = null;
+let quitting = false;
+const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
+const logFile = () => path.join(app.getPath('userData'), 'flowsense.log');
+let settings = { closeToTray: false, startWithPc: false };
+const hidden = process.argv.includes('--hidden');
+
+function loadSettings() {
+  try { settings = Object.assign(settings, JSON.parse(fs.readFileSync(settingsFile(), 'utf8'))); } catch (e) {}
+}
+
+function saveSettings() {
+  fs.mkdirSync(app.getPath('userData'), { recursive: true });
+  fs.writeFileSync(settingsFile(), JSON.stringify(settings));
+  if (process.platform === 'win32') {
+    app.setLoginItemSettings({ openAtLogin: !!settings.startWithPc, args: ['--hidden'] });
+  }
+}
+
+function writeLog(text) {
+  try {
+    fs.mkdirSync(app.getPath('userData'), { recursive: true });
+    const f = logFile();
+    if (fs.existsSync(f) && fs.statSync(f).size > 1048576) fs.renameSync(f, f + '.old');
+    fs.appendFileSync(f, `${new Date().toISOString()} ${String(text).slice(0, 2000)}\n`);
+  } catch (e) {}
+}
+
+const trayIcon = lvl => nativeImage.createFromPath(path.join(__dirname, 'build', `tray-${lvl}.png`));
+
+function createTray() {
+  try {
+    tray = new Tray(trayIcon(0));
+    tray.setToolTip('FlowSense');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Show FlowSense', click: () => showMain() },
+      { label: 'Quit', click: () => { quitting = true; app.quit(); } }
+    ]));
+    tray.on('click', () => showMain());
+  } catch (e) { writeLog('tray failed: ' + e.message); }
+}
+
+function showMain() {
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+}
+
+const cmp = (a, b) => {
+  const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); }
+  return 0;
+};
+
+async function checkUpdate() {
+  try {
+    const m = String((pkg.repository && pkg.repository.url) || '').match(/github\.com\/([^/]+\/[^/.]+)/);
+    if (!m) return { error: 'No repository set in package.json' };
+    const res = await net.fetch(`https://api.github.com/repos/${m[1]}/releases/latest`, { headers: { 'User-Agent': 'FlowSense' } });
+    if (!res.ok) return { error: 'GitHub answered ' + res.status };
+    const j = await res.json();
+    const latest = String(j.tag_name || '').replace(/^v/, '');
+    return { current: app.getVersion(), latest, url: j.html_url, newer: cmp(latest, app.getVersion()) > 0 };
+  } catch (e) { return { error: e.message }; }
+}
 
 function showSplash() {
   const s = new BrowserWindow({
@@ -44,7 +111,8 @@ function createMain() {
   });
 
   const ses = win.webContents.session;
-  ses.setPermissionCheckHandler((wc, permission) => permission === 'serial');
+  ses.setPermissionCheckHandler((wc, permission) => permission === 'serial' || permission === 'notifications');
+  ses.setPermissionRequestHandler((wc, permission, cb) => cb(permission === 'notifications'));
   ses.setDevicePermissionHandler(details => details.deviceType === 'serial');
   ses.on('select-serial-port', (event, ports, wc, callback) => {
     event.preventDefault();
@@ -67,6 +135,9 @@ function createMain() {
     if (url.startsWith('file:')) return;
     event.preventDefault();
     if (/^(sms|https?):/.test(url)) shell.openExternal(url);
+  });
+  win.on('close', e => {
+    if (!quitting && settings.closeToTray && tray) { e.preventDefault(); win.hide(); }
   });
   win.on('closed', () => { win = null; });
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
@@ -145,22 +216,41 @@ ipcMain.handle('setup:done', () => {
   if (setupWin) setupWin.close();
 });
 
-app.on('second-instance', () => {
-  if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+ipcMain.handle('app:settings:get', () => ({ closeToTray: settings.closeToTray, startWithPc: settings.startWithPc, platform: process.platform, version: app.getVersion() }));
+ipcMain.handle('app:settings:set', (e, o) => {
+  if (o && typeof o.closeToTray === 'boolean') settings.closeToTray = o.closeToTray;
+  if (o && typeof o.startWithPc === 'boolean') settings.startWithPc = o.startWithPc;
+  saveSettings();
 });
+ipcMain.handle('app:level', (e, lvl, text) => {
+  if (!tray) return;
+  tray.setImage(trayIcon(Math.max(0, Math.min(4, Number(lvl) || 0))));
+  tray.setToolTip(String(text || 'FlowSense').slice(0, 120));
+});
+ipcMain.handle('app:focus', () => showMain());
+ipcMain.handle('app:log', (e, text) => writeLog(text));
+ipcMain.handle('app:open-log', () => { fs.mkdirSync(app.getPath('userData'), { recursive: true }); if (!fs.existsSync(logFile())) writeLog('log started'); shell.showItemInFolder(logFile()); });
+ipcMain.handle('app:check-update', () => checkUpdate());
+ipcMain.handle('app:open-url', (e, url) => { if (typeof url === 'string' && url.startsWith('https://github.com/')) shell.openExternal(url); });
+
+app.on('second-instance', () => showMain());
+app.on('before-quit', () => { quitting = true; });
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
+  loadSettings();
+  createTray();
   const t0 = Date.now();
   const splash = showSplash();
   createMain();
   win.once('ready-to-show', () => {
     setTimeout(() => {
       if (!splash.isDestroyed()) splash.destroy();
+      if (hidden && tray) return;
       win.show();
       if (!fs.existsSync(flagFile())) openSetup();
     }, Math.max(0, SPLASH_MS - (Date.now() - t0)));
   });
 });
 
-app.on('window-all-closed', () => app.quit());
+app.on('window-all-closed', () => { if (!settings.closeToTray || quitting) app.quit(); });
