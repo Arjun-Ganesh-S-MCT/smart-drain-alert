@@ -291,7 +291,15 @@ Actual package sizes can be checked in the GitHub Actions build output.
 This project is licensed under the **MIT License**.
 
 See the `LICENSE` file for details.
+## Code Signing Policy
 
+Free code signing provided by SignPath.io,
+certificate by SignPath Foundation.
+
+### Privacy Policy
+
+[Provide your actual privacy policy or the
+required SignPath privacy statement.]
 ---
 
 <p align="center">
