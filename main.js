@@ -4,8 +4,11 @@ const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
 const pkg = require('./package.json');
+let autoUpdater = null;
+try { autoUpdater = require('electron-updater').autoUpdater; } catch (e) {}
 
-if (!app.requestSingleInstanceLock()) app.quit();
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) app.quit();
 
 const ICON = path.join(__dirname, 'build', 'icon.png');
 const BG = '#e0d9d3';
@@ -24,7 +27,7 @@ let setupWin = null;
 let tray = null;
 let quitting = false;
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
-const logFile = () => path.join(app.getPath('userData'), 'flowsense.log');
+const logFile = () => path.join(app.getPath('userData'), 'flowbeacon.log');
 let settings = { closeToTray: false, startWithPc: false };
 const hidden = process.argv.includes('--hidden');
 
@@ -54,9 +57,9 @@ const trayIcon = lvl => nativeImage.createFromPath(path.join(__dirname, 'build',
 function createTray() {
   try {
     tray = new Tray(trayIcon(0));
-    tray.setToolTip('FlowSense');
+    tray.setToolTip('FlowBeacon');
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: 'Show FlowSense', click: () => showMain() },
+      { label: 'Show FlowBeacon', click: () => showMain() },
       { label: 'Quit', click: () => { quitting = true; app.quit(); } }
     ]));
     tray.on('click', () => showMain());
@@ -76,11 +79,31 @@ const cmp = (a, b) => {
   return 0;
 };
 
+// Silent self-update: Windows installer and Linux AppImage only (portable .exe and .deb fall back to the notify banner)
+const updaterActive = () => !!autoUpdater && app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR && (process.platform === 'win32' || !!process.env.APPIMAGE);
+let updaterWired = false;
+function sendUpdate(o) { if (win && !win.isDestroyed()) win.webContents.send('app:update', o); }
+function wireUpdater() {
+  if (updaterWired || !updaterActive()) return;
+  updaterWired = true;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', i => sendUpdate({ state: 'available', version: i.version }));
+  autoUpdater.on('download-progress', p => sendUpdate({ state: 'downloading', percent: Math.round(p.percent || 0) }));
+  autoUpdater.on('update-downloaded', i => sendUpdate({ state: 'ready', version: i.version }));
+  autoUpdater.on('error', e => { writeLog('updater: ' + (e && e.message)); sendUpdate({ state: 'error', error: String(e && e.message || e).slice(0, 200) }); });
+}
+
 async function checkUpdate() {
+  if (updaterActive()) {
+    wireUpdater();
+    try { await autoUpdater.checkForUpdates(); } catch (e) { return { error: e.message }; }
+    return { current: app.getVersion(), latest: app.getVersion(), newer: false, auto: true };
+  }
   try {
-    const m = String((pkg.repository && pkg.repository.url) || '').match(/github\.com\/([^/]+\/[^/.]+)/);
+    const m = String((pkg.repository && pkg.repository.url) || '').match(/github\.com\/([^/]+\/[^/]+?)(?:\.git)?(?:[/#?].*)?$/);
     if (!m) return { error: 'No repository set in package.json' };
-    const res = await net.fetch(`https://api.github.com/repos/${m[1]}/releases/latest`, { headers: { 'User-Agent': 'FlowSense' } });
+    const res = await net.fetch(`https://api.github.com/repos/${m[1]}/releases/latest`, { headers: { 'User-Agent': 'FlowBeacon' } });
     if (!res.ok) return { error: 'GitHub answered ' + res.status };
     const j = await res.json();
     const latest = String(j.tag_name || '').replace(/^v/, '');
@@ -102,7 +125,7 @@ function showSplash() {
 function createMain() {
   win = new BrowserWindow({
     width: 1320, height: 900, minWidth: 960, minHeight: 640, show: false,
-    title: 'FlowSense', backgroundColor: BG, icon: ICON,
+    title: 'FlowBeacon', backgroundColor: BG, icon: ICON,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, sandbox: true, nodeIntegration: false,
@@ -111,6 +134,13 @@ function createMain() {
   });
 
   const ses = win.webContents.session;
+  // OpenStreetMap's tile policy rejects (403) requests with no Referer / identifying User-Agent, which is what a file:// page sends
+  ses.webRequest.onBeforeSendHeaders({ urls: ['https://*.tile.openstreetmap.org/*'] }, (details, cb) => {
+    const h = details.requestHeaders;
+    h['Referer'] = 'https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert';
+    h['User-Agent'] = 'FlowBeacon/' + app.getVersion() + ' (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)';
+    cb({ requestHeaders: h });
+  });
   ses.setPermissionCheckHandler((wc, permission) => permission === 'serial' || permission === 'notifications');
   ses.setPermissionRequestHandler((wc, permission, cb) => cb(permission === 'notifications'));
   ses.setDevicePermissionHandler(details => details.deviceType === 'serial');
@@ -147,7 +177,7 @@ function openSetup() {
   if (setupWin) { setupWin.focus(); return; }
   setupWin = new BrowserWindow({
     parent: win || undefined, modal: !!win, width: 640, height: 640, resizable: false,
-    minimizable: false, title: 'FlowSense setup', backgroundColor: BG, icon: ICON, autoHideMenuBar: true,
+    minimizable: false, title: 'FlowBeacon setup', backgroundColor: BG, icon: ICON, autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true }
   });
   setupWin.setMenu(null);
@@ -225,18 +255,19 @@ ipcMain.handle('app:settings:set', (e, o) => {
 ipcMain.handle('app:level', (e, lvl, text) => {
   if (!tray) return;
   tray.setImage(trayIcon(Math.max(0, Math.min(4, Number(lvl) || 0))));
-  tray.setToolTip(String(text || 'FlowSense').slice(0, 120));
+  tray.setToolTip(String(text || 'FlowBeacon').slice(0, 120));
 });
 ipcMain.handle('app:focus', () => showMain());
 ipcMain.handle('app:log', (e, text) => writeLog(text));
 ipcMain.handle('app:open-log', () => { fs.mkdirSync(app.getPath('userData'), { recursive: true }); if (!fs.existsSync(logFile())) writeLog('log started'); shell.showItemInFolder(logFile()); });
 ipcMain.handle('app:check-update', () => checkUpdate());
+ipcMain.handle('app:update:install', () => { if (!updaterActive()) return; quitting = true; autoUpdater.quitAndInstall(true, true); });
 ipcMain.handle('app:open-url', (e, url) => { if (typeof url === 'string' && url.startsWith('https://github.com/')) shell.openExternal(url); });
 
 app.on('second-instance', () => showMain());
 app.on('before-quit', () => { quitting = true; });
 
-app.whenReady().then(() => {
+if (gotLock) app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   loadSettings();
   createTray();

@@ -85,3 +85,17 @@ test('recorded CSV files are parsed', () => {
   assert.strictEqual(rows[0].label, 'normal');
   assert.strictEqual(rows[0].dist, 12.2);
 });
+
+test('a faulty ultrasonic reading is not treated as a rising water level', () => {
+  const d = reading({ flow: 1.6, dist: 0 });
+  const h = Core.health(d, [], base);
+  const r = Core.evaluate(d, h, base, cfg);
+  assert.strictEqual(r.rise, 0);
+  assert.ok(r.lvl < 2);
+  assert.ok(!r.ev.some(x => /^Level \+/.test(x)));
+});
+
+test('update.js VERSION matches package.json', () => {
+  const v = /const VERSION = '([^']+)'/.exec(require('fs').readFileSync(require('path').join(__dirname, '../src/update.js'), 'utf8'))[1];
+  assert.strictEqual(v, require('../package.json').version);
+});

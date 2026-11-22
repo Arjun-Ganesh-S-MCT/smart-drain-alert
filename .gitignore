@@ -2,3 +2,4 @@ node_modules/
 dist/
 signed-*/
 src/fonts/
+src/vendor/
