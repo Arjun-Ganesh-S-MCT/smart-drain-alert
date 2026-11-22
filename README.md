@@ -1,6 +1,6 @@
-# FlowSense
+# FlowBeacon
 
-FlowSense, made by TechMinds, is a desktop monitor for the Smart Drainage Alert and Blockage Prediction System, an ESP32-S3 prototype that watches flow, water level, turbidity and a rain plate and warns of a developing blockage. Runs on Windows 11 and Linux. Licensed under MIT.
+FlowBeacon, made by TechMinds, is a desktop monitor for the Smart Drainage Alert and Blockage Prediction System, an ESP32-S3 prototype that watches flow, water level, turbidity and a rain plate and warns of a developing blockage. Runs on Windows 11 and Linux. Licensed under MIT.
 
 ## Features
 - Seven colour themes (coral, blue, green, purple, red, yellow, black), each in light and dark, plus follow-system
@@ -11,6 +11,7 @@ FlowSense, made by TechMinds, is a desktop monitor for the Smart Drainage Alert 
 - Live readings, condition (normal, possible blockage, blockage warning, overflow risk, overflow detected), likely cause, severity and confidence
 - Offline overflow prediction and anomaly detection, with sound alerts and the Drip mascot
 - USB serial or Wi-Fi connection to the ESP32-S3, SMS alerts through a GSM module on the board
+- City drainage map for corporation officials (Leaflet + OpenStreetMap): live device markers, ward/zone/status filters, city stats, maintenance team assignment and resolution tracking, optional PIN lock. Open it with the City drainage map button; devices appear automatically from the ESP32 `node` id, then set their location under Edit device location
 - Calibration dials and wizard, incident log, PDF report, CSV test recording
 
 ## Run from source
@@ -58,7 +59,7 @@ The serial format, Wi-Fi provisioning and SMS firmware sketch are in the app und
 Font: JetBrains Mono (SIL Open Font License). Drip mascot artwork and the TechMinds logo belong to the team.
 
 ## First-run setup
-On the first launch FlowSense shows a setup popup. The app itself needs nothing downloaded, since the sounds, fonts and mascot are bundled. The popup checks the parts outside the app: serial port permission on Linux (with a button that asks for your password and adds you to the `dialout` or `uucp` group) and missing USB serial drivers on Windows (with links to the CP210x and CH340 driver pages). Run it again from Help in the app.
+On the first launch FlowBeacon shows a setup popup. The app itself needs nothing downloaded, since the sounds, fonts and mascot are bundled. The popup checks the parts outside the app: serial port permission on Linux (with a button that asks for your password and adds you to the `dialout` or `uucp` group) and missing USB serial drivers on Windows (with links to the CP210x and CH340 driver pages). Run it again from Help in the app.
 
 ## App size
 `package.json` keeps only the English Chromium locale, uses maximum compression, and ships just three font files. The long rain sound was trimmed to 6 seconds. Check the real sizes in the Actions build output. A much smaller app (about 10 to 15 MB) would need a rewrite on Tauri with a native serial plugin.
@@ -70,4 +71,10 @@ On the first launch FlowSense shows a setup popup. The app itself needs nothing 
 The ESP32-S3 sketch is in `firmware/`. See `firmware/README.md`.
 
 ## Updates
-FlowSense checks the latest GitHub Release on start (switchable in Appearance and behaviour) and shows a Download button when a newer version exists. It does not install updates silently, because that would break the code-signing flow.
+FlowBeacon checks the latest GitHub Release on start (switchable in Appearance and behaviour) and shows a Download button when a newer version exists. It does not install updates silently, because that would break the code-signing flow.
+
+## Drip, the assistant
+Drip shows the state of the drains with his face and posture, wears his hard hat during alerts and holds an umbrella in his left hand when the rain plate is wet. Click him for a spoken-style status summary. In Ask Drip you can chat offline: ask for the status, the cause of an alert, the overflow estimate, what a sensor means, or tell him to set the baseline, start the demo, mute, acknowledge an alarm, change the theme colour or the language. "Speak alerts aloud" uses the voices installed on the computer. You can drag and throw him, and right-click sends him back to the corner.
+
+## Sounds
+The sound files are in `src/sounds/`. The calibration dials use two clips cut from one recording: a single click for each step and a short burst for flicks. Interface sounds and quiet hours control them.

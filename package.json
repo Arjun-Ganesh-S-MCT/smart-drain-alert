@@ -1,7 +1,7 @@
 {
-  "name": "flowsense",
-  "version": "1.1.0",
-  "description": "FlowSense by TechMinds: desktop monitor for the Smart Drainage Alert and Blockage Prediction System (ESP32-S3)",
+  "name": "flowbeacon",
+  "version": "1.4.0",
+  "description": "FlowBeacon by TechMinds: desktop monitor for the Smart Drainage Alert and Blockage Prediction System (ESP32-S3)",
   "main": "main.js",
   "author": {
     "name": "Smart Drainage Alert team",
@@ -14,17 +14,20 @@
     "start": "electron .",
     "dist:win": "electron-builder --win --publish never",
     "dist:linux": "electron-builder --linux --publish never",
-    "test": "node --test tests/core.test.js"
+    "test": "node --test tests/core.test.js tests/drip.test.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
   "devDependencies": {
     "@fontsource/jetbrains-mono": "^5.0.0",
     "electron": "^37.0.0",
-    "electron-builder": "^26.0.0"
+    "electron-builder": "^26.0.0",
+    "leaflet": "^1.9.4"
   },
   "build": {
-    "appId": "com.techminds.flowsense",
-    "productName": "FlowSense",
+    "appId": "com.techminds.flowbeacon",
+    "productName": "FlowBeacon",
     "copyright": "Copyright (c) 2026 TechMinds",
     "directories": {
       "output": "dist",
@@ -57,10 +60,10 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "FlowSense-Setup-${version}.${ext}"
+      "artifactName": "FlowBeacon-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "FlowSense-Portable-${version}.${ext}"
+      "artifactName": "FlowBeacon-Portable-${version}.${ext}"
     },
     "linux": {
       "icon": "build/icon.png",
@@ -69,12 +72,19 @@
         "AppImage",
         "deb"
       ],
-      "artifactName": "FlowSense-${version}-linux.${ext}",
-      "executableName": "flowsense"
+      "artifactName": "FlowBeacon-${version}-linux.${ext}",
+      "executableName": "flowbeacon"
     },
     "compression": "maximum",
     "electronLanguages": [
       "en-US"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Arjun-Ganesh-S-MCT",
+        "repo": "smart-drain-alert"
+      }
     ]
   },
   "repository": {

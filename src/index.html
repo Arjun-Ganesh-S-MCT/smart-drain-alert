@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FlowSense</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src ws: wss:">
+<title>FlowBeacon</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; img-src 'self' file: data: https://*.tile.openstreetmap.org https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; connect-src ws: wss: https://api.github.com">
 <style>
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;src:url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:600;font-style:normal;src:url("fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2")}
@@ -78,7 +78,7 @@ details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1
 .dp.af{transform-origin:50% 90%;animation:d-flap .35s ease-in-out infinite alternate}
 .dp[data-k=sweat_drop]{animation:d-sweat 1s ease-in infinite}.dp[data-k=zzz]{animation:d-zz 2.2s ease-in-out infinite}
 .dp[data-k=stars]{animation:d-rot 2s linear infinite}.dp[data-k=tick]{animation:d-pop .6s cubic-bezier(.3,1.6,.5,1) both}
-.dp[data-k=umbrella]{animation:d-tilt 3s ease-in-out infinite}
+
 #bub{position:absolute;right:0;bottom:calc(100% + 12px);width:max-content;max-width:230px;padding:10px 16px;border-radius:20px;font-size:.78rem;line-height:1.4;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
 #bub.on{opacity:1;transform:none}
 .a-float{animation:d-float 3s ease-in-out infinite}.a-bounce{animation:d-bounce .6s ease-in-out infinite}.a-tilt{animation:d-tilt 1.8s ease-in-out infinite}
@@ -111,20 +111,82 @@ button{transition:transform .3s cubic-bezier(.34,1.8,.64,1),box-shadow .15s,colo
 table.h{width:100%;border-collapse:collapse;font-size:.78rem}table.h td,table.h th{padding:6px 8px;text-align:left}table.h th{color:var(--mu)}
 html.calm *,html.calm *::before{animation:none!important;transition:none!important}
 #upd{display:none;margin-bottom:20px;padding:12px 18px;border-radius:18px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 28px;padding:14px 22px;margin-bottom:24px}
+.tg{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar button{min-height:42px;white-space:nowrap}.toolbar .sub{white-space:nowrap}
+.tsep{width:2px;height:28px;border-radius:2px;box-shadow:inset 1px 1px 2px var(--sd),inset -1px -1px 2px var(--sl)}
+#conn{display:flex;align-items:center;white-space:nowrap}
+.dp[data-k=umbrella]{transform-origin:40% 95%;animation:d-sway 3s ease-in-out infinite}@keyframes d-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
 #rep{display:none}
 @media print{body>*:not(#rep){display:none!important}#rep{display:block!important;color:#000;background:#fff;font-family:sans-serif}#rep td,#rep th{border:1px solid #888;padding:4px 8px;font-size:12px}#rep table{border-collapse:collapse;width:100%}}
 </style>
+<link rel="stylesheet" href="map.css">
 </head>
 <body>
 <header>
-  <div class="row" style="gap:16px"><img src="img/techminds.png" alt="TechMinds" style="height:52px"><div><h1>FlowSense</h1><div class="sub">by TechMinds · drain blockage prediction · ESP32-S3 live monitor</div></div></div>
-  <div class="row">
-    <span id="conn" class="sub"><span class="dot"></span>Not connected</span>
-    <button id="bConn">Connect ESP32-S3</button><button id="bDemo">Demo mode</button><button id="bCal">Set baseline</button><button id="bWiz">Calibration</button>
-    <span class="sub">Sound</span><label class="sw"><input type="checkbox" id="snd" checked aria-label="Sound"><i></i></label><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span class="sub">Drip</span><label class="sw"><input type="checkbox" id="dripOn" checked aria-label="Drip mascot"><i></i></label>
-  </div>
+  <div class="row" style="gap:16px;flex-wrap:nowrap"><img src="img/techminds.png" alt="TechMinds" style="height:52px"><div><h1>FlowBeacon</h1><div class="sub">by TechMinds · drain blockage prediction · ESP32-S3 live monitor</div></div></div>
+  <span id="conn" class="sub"><span class="dot"></span>Not connected</span>
 </header>
+<nav class="toolbar raised" aria-label="Main controls">
+  <div class="tg"><button id="bConn">Connect ESP32-S3</button><button id="bDemo">Demo mode</button><button id="bCal">Set baseline</button><button id="bWiz">Calibration</button><span class="tsep"></span><button id="bMapNav" aria-pressed="false">City drainage map</button></div>
+  <div class="tg"><span class="sub">Sound</span><label class="sw"><input type="checkbox" id="snd" checked aria-label="Sound"><i></i></label><input type="range" id="vol" min="0" max="100" aria-label="Volume"><span class="tsep"></span><span class="sub">Drip</span><label class="sw"><input type="checkbox" id="dripOn" checked aria-label="Drip assistant"><i></i></label></div>
+</nav>
 <div class="banner" id="ban"><span id="banT"></span><button id="bAck">Acknowledge</button></div>
+<section id="mapView" class="dm-view" hidden aria-label="Municipal drainage monitoring map">
+  <div id="dmLock" class="raised card" hidden>
+    <h2>Corporation officials only</h2>
+    <p class="sub">Enter the officials PIN to open the city drainage map.</p>
+    <div class="row"><input type="password" id="dmPinIn" autocomplete="off" placeholder="PIN" style="max-width:200px"><button id="dmPinGo">Unlock</button><span id="dmPinMsg" class="sub"></span></div>
+  </div>
+  <div id="dmBody">
+    <div class="dm-stats">
+      <div class="raised card k c1"><label>Total devices</label><div class="stat" id="dmTotal">0</div><div class="sub" id="dmScope">All wards · all zones</div></div>
+      <div class="raised card k c2"><label>Normal devices</label><div class="stat" id="dmNormal">0</div><div class="sub">Reporting, no fault</div></div>
+      <div class="raised card k c3"><label>Active blockages</label><div class="stat" id="dmActive">0</div><div class="sub">Unresolved incidents</div></div>
+      <div class="raised card k c4"><label>Resolved incidents</label><div class="stat" id="dmResolved">0</div><div class="sub">Closed by officials or sensor</div></div>
+    </div>
+    <div class="raised card dm-filters">
+      <div><label for="dmWard">Ward</label><select id="dmWard"></select></div>
+      <div><label for="dmZone">Zone</label><select id="dmZone"></select></div>
+      <div><label for="dmStat">Status</label><select id="dmStat"></select></div>
+      <div class="dm-legend" aria-label="Marker colours">
+        <span><i class="dm-dot dm-s-normal"></i>Normal</span><span><i class="dm-dot dm-s-possible"></i>Possible blockage</span><span><i class="dm-dot dm-s-blockage"></i>Blockage detected</span><span><i class="dm-dot dm-s-overflow"></i>Overflow warning</span><span><i class="dm-dot dm-s-offline"></i>Offline</span>
+      </div>
+    </div>
+    <div class="dm-main">
+      <div class="raised card dm-mapcard"><div id="dmMap" class="inset" role="application" aria-label="Drainage map"></div><div id="dmMapMsg" class="sub"></div></div>
+      <aside class="raised card dm-side">
+        <h2>Selected device</h2>
+        <div id="dmInfo" class="sub">Click a marker on the map or a row below.</div>
+        <div id="dmDispatch" hidden>
+          <h2 style="margin-top:18px">Maintenance</h2>
+          <div id="dmInc" class="sub"></div>
+          <label for="dmTeam" class="fld">Maintenance team</label>
+          <div class="row"><select id="dmTeam" style="flex:1"></select><button id="dmAssign">Assign</button></div>
+          <div class="row fld"><button id="dmStart">Work started</button><button id="dmDone">Mark resolved</button></div>
+        </div>
+        <details id="dmEditBox"><summary>Edit device location</summary>
+          <label for="dmeName" class="fld">Location / landmark</label><input type="text" id="dmeName">
+          <div class="row fld"><div style="flex:1"><label for="dmeWard">Ward</label><input type="text" id="dmeWard"></div><div style="flex:1"><label for="dmeZone">Zone</label><input type="text" id="dmeZone"></div></div>
+          <div class="row fld"><div style="flex:1"><label for="dmeLat">Latitude</label><input type="number" id="dmeLat" step="0.00001"></div><div style="flex:1"><label for="dmeLng">Longitude</label><input type="number" id="dmeLng" step="0.00001"></div></div>
+          <div class="row fld"><button id="dmePick">Pick on map</button><button id="dmeSave">Save</button><button id="dmeDel">Remove</button></div>
+        </details>
+      </aside>
+    </div>
+    <div class="wide">
+      <div class="raised card"><h2>Incidents</h2><div class="dm-scroll"><table class="h" id="dmTable"></table></div></div>
+      <div class="raised card"><h2>Register a device &amp; teams</h2>
+        <label for="dmNewId">Device ID (as set on the ESP32 board)</label><div class="row"><input type="text" id="dmNewId" placeholder="e.g. drain-ward12-01" style="flex:1"><button id="dmAdd">Add</button></div>
+        <label for="dmNewTeam" class="fld">Maintenance teams</label><div class="row"><input type="text" id="dmNewTeam" placeholder="New team name" style="flex:1"><button id="dmAddTeam">Add team</button></div>
+        <div id="dmTeams" class="sub" style="margin-top:8px"></div>
+        <label for="dmOfficer" class="fld">Your name (recorded on assignments)</label><input type="text" id="dmOfficer" autocomplete="off">
+        <label for="dmPinNew" class="fld">Officials PIN (optional lock for this map)</label><div class="row"><input type="password" id="dmPinNew" autocomplete="off" placeholder="New PIN, 4+ characters" style="flex:1"><button id="dmPinSet">Set PIN</button><button id="dmPinOff">Remove</button></div>
+        <div class="row fld"><label for="dmCity" style="margin:0">City centre</label><input type="text" id="dmCity" style="flex:1" placeholder="lat, lng"><button id="dmCityGo">Go</button></div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="raised card" style="margin-bottom:24px">
   <div class="status">
@@ -239,6 +301,7 @@ void loop(){
 <div id="drip" aria-hidden="true"><div id="bub" class="raised"></div><div id="dsq"><div id="dw"><div id="dbody"></div></div></div></div>
 <div id="rep"></div>
 <script src="core.js"></script>
+<script src="drip-core.js"></script>
 <script>
 const DRIP={"arm_left":[70,163,"drip/arm_left.png"],"arm_right":[69,163,"drip/arm_right.png"],"arm_up":[100,175,"drip/arm_up.png"],"arm_wave":[131,126,"drip/arm_wave.png"],"body":[174,216,"drip/body.png"],"brows_angry":[147,46,"drip/brows_angry.png"],"brows_up":[155,51,"drip/brows_up.png"],"brows_worried":[192,37,"drip/brows_worried.png"],"eyes_closed":[190,39,"drip/eyes_closed.png"],"eyes_open":[196,87,"drip/eyes_open.png"],"hardhat":[125,93,"drip/hardhat.png"],"mouth_open":[56,43,"drip/mouth_open.png"],"mouth_scream":[87,61,"drip/mouth_scream.png"],"mouth_sleep":[93,21,"drip/mouth_sleep.png"],"mouth_smile":[58,25,"drip/mouth_smile.png"],"mouth_worried":[79,31,"drip/mouth_worried.png"],"pupil_l":[44,44,"drip/pupil_l.png"],"pupil_r":[41,44,"drip/pupil_r.png"],"stars":[96,94,"drip/stars.png"],"sweat_drop":[67,91,"drip/sweat_drop.png"],"tick":[89,73,"drip/tick.png"],"umbrella":[105,94,"drip/umbrella.png"],"zzz":[120,94,"drip/zzz.png"]};
 let QUIET=false;
@@ -252,13 +315,18 @@ const NAMES={dropWarn:'Flow drop: possible (%)',dropBlock:'Flow drop: blockage (
 let S={cfg:{...DEF},base:null,inc:[],vol:.6,mute:false,theme:''};
 try{Object.assign(S,JSON.parse(localStorage.getItem('dra')||'{}'))}catch(e){}
 S.inc.forEach(i=>i.time=new Date(i.time));
-S.sms=Object.assign({on:false,nums:'',min:3,cool:5},S.sms);if(S.drip===undefined)S.drip=true;
+S.sms=Object.assign({on:false,nums:'',min:3,cool:5},S.sms);if(S.drip&&typeof S.drip==='object'){S.dripVoice=!!S.drip.voice;S.drip=true}if(S.drip===undefined)S.drip=true;S.dripVoice=!!S.dripVoice;
 const save=()=>{try{localStorage.setItem('dra',JSON.stringify(S))}catch(e){}};
 const C=()=>Core.conf(S.cfg);
 const ST=[{n:'Normal',c:'#22b573',s:'None'},{n:'Possible blockage',c:'#e6b800',s:'Low'},{n:'Blockage warning',c:'#e8761f',s:'Medium'},{n:'Overflow risk',c:'#ef4444',s:'High'},{n:'Overflow detected',c:'#c0143c',s:'Critical'}];
 const msg=t=>$('msg').textContent=t;
 
 const SA={};['click','connect','disconnect','baseline','rain','possible','warning','risk','overflow','predict','normal'].forEach(n=>{const a=new Audio('sounds/'+n+'.mp3');a.preload='auto';SA[n]=a});
+const KT=new Audio('sounds/knob_tick.wav'),KS=new Audio('sounds/knob_spin.wav');KT.preload=KS.preload='auto';let kLast=0;
+const knobOff=()=>S.mute||(window.soundOff&&soundOff('click'));
+function knobTick(f){const t=performance.now();if(knobOff()||t-kLast<38)return;kLast=t;const a=KT.cloneNode();a.preservesPitch=false;a.volume=Math.max(0,Math.min(1,S.vol*.8));a.playbackRate=.92+f*.2;a.play().catch(()=>{})}
+function knobSpin(){if(knobOff())return;KS.volume=Math.max(0,Math.min(1,S.vol*.8));KS.currentTime=0;KS.play().catch(()=>{})}
+function knobStop(){KS.pause()}
 const play=(n,idle)=>{const a=SA[n];if(!a||S.mute||(window.soundOff&&soundOff(n)))return;if(idle&&!a.paused&&!a.ended)return;a.volume=Math.max(0,Math.min(1,S.vol));a.currentTime=0;a.play().catch(()=>{})};
 document.addEventListener('click',e=>{if(e.target.closest('button'))play('click')});
 $('snd').onchange=e=>{S.mute=!e.target.checked;save()};
@@ -280,7 +348,7 @@ function onData(d){d={flow:+d.flow||0,dist:+d.dist||0,turb:+d.turb||0,rain:d.rai
   if(calBuf){calBuf.push(d);msg('Setting baseline… '+calBuf.length+'/10');if(calBuf.length>=10){mkBase(calBuf);calBuf=null;msg('Baseline saved. Keep the valve fully open.');play('baseline');dripFlash('cheer',2500,'Baseline saved!')}}
   if(wz.buf){wz.buf.push(d);if(wz.buf.length>=10){wz.res.push({flow:mean(wz.buf,'flow'),dist:mean(wz.buf,'dist'),turb:mean(wz.buf,'turb'),rain:mean(wz.buf,'rain'),buf:wz.buf});if(wz.step===0)mkBase(wz.buf);wz.buf=null;wz.step++;wzUi();play('baseline');dripFlash('cheer',2500,'Baseline saved!')}}
   const h=health(d),r=evaluate(d,h),s=ST[r.lvl];
-  if(d.rain&&!prevRain){play('rain');dripSay('Rain detected. Umbrella up!')}prevRain=d.rain;
+  if(d.rain&&!prevRain){play('rain');dripSay('Rain detected.')}prevRain=d.rain;
   $('vFlow').textContent=d.flow.toFixed(2);$('vDist').textContent=d.dist.toFixed(1);$('vTurb').textContent=Math.round(d.turb);$('vRain').textContent=d.rain?'Wet':'Dry';
   const b=S.base;if(b){$('sFlow').textContent='Baseline '+b.flow.toFixed(2);$('sDist').textContent='Baseline '+b.dist.toFixed(1)+' cm';$('sTurb').textContent='Baseline '+Math.round(b.turb)}
   $('cond').textContent=ICO[r.lvl]+' '+tr(s.n);$('cond').style.color=s.c;$('orb').style.background=s.c;
@@ -308,13 +376,14 @@ function draw(){const cv=$('cv'),x=cv.getContext('2d'),w=cv.width,h=cv.height,n=
   line('f',AC,false);line('l',TX,true)}
 
 function renderLog(){const m=+$('flt').value,l=S.inc.filter(i=>i.lvl>=m);
-  $('log').innerHTML=l.map(i=>'<div class="inc inset" style="border-left:6px solid '+i.c+'"><b style="color:'+i.c+'">'+(i.node?i.node+' · ':'')+tr(i.cond)+'</b> · '+tr(i.sev)+' '+tr('severity')+', '+i.conf+'% '+tr('confidence')+'<br>'+tr(i.cause)+'<br><span class="sub">'+trEv(i.ev)+'<br>'+i.time.toLocaleString()+'</span></div>').join('')||'<div class="sub" style="padding:10px">No incidents yet.</div>'}
+  $('log').innerHTML=l.map(i=>'<div class="inc inset" style="border-left:6px solid '+i.c+'"><b style="color:'+i.c+'">'+(i.node?escH(i.node)+' · ':'')+tr(i.cond)+'</b> · '+tr(i.sev)+' '+tr('severity')+', '+i.conf+'% '+tr('confidence')+'<br>'+tr(i.cause)+'<br><span class="sub">'+trEv(i.ev)+'<br>'+i.time.toLocaleString()+'</span></div>').join('')||'<div class="sub" style="padding:10px">No incidents yet.</div>'}
 $('flt').onchange=renderLog;$('win').onchange=draw;
 $('bClr').onclick=()=>{if(confirm('Clear all saved incidents?')){S.inc=[];save();renderLog()}};
+const escH=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()};
 const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
 $('bCsv').onclick=()=>dl('drainage-incidents.csv',['Time,Condition,Likely cause,Sensor evidence,Severity,Confidence %'].concat(S.inc.map(i=>[i.time.toISOString(),i.cond,i.cause,i.ev,i.sev,i.conf].map(q).join(','))).join('\n'),'text/csv');
-$('bRep').onclick=()=>{$('rep').innerHTML='<h1 style="color:#000;background:none">FlowSense: incident report</h1><p>Generated '+new Date().toLocaleString()+'. Prototype estimates, not confirmed measurements.</p><table><tr><th>Time</th><th>Condition</th><th>Likely cause</th><th>Sensor evidence</th><th>Severity</th><th>Confidence</th></tr>'+S.inc.map(i=>'<tr><td>'+i.time.toLocaleString()+'</td><td>'+i.cond+'</td><td>'+i.cause+'</td><td>'+i.ev+'</td><td>'+i.sev+'</td><td>'+i.conf+'%</td></tr>').join('')+'</table>';print()};
+$('bRep').onclick=()=>{$('rep').innerHTML='<h1 style="color:#000;background:none">FlowBeacon: incident report</h1><p>Generated '+new Date().toLocaleString()+'. Prototype estimates, not confirmed measurements.</p><table><tr><th>Time</th><th>Condition</th><th>Likely cause</th><th>Sensor evidence</th><th>Severity</th><th>Confidence</th></tr>'+S.inc.map(i=>'<tr><td>'+i.time.toLocaleString()+'</td><td>'+i.cond+'</td><td>'+i.cause+'</td><td>'+i.ev+'</td><td>'+i.sev+'</td><td>'+i.conf+'%</td></tr>').join('')+'</table>';print()};
 $('bRec').onclick=()=>{rec.on=!rec.on;$('bRec').textContent=rec.on?'Stop recording':'Start recording';$('bRec').classList.toggle('on',rec.on);if(rec.on)rec.rows=[]};
 $('bRecS').onclick=()=>dl('drainage-test-'+$('lab').value.replace(/ /g,'-')+'.csv','time,label,flow,dist,turb,rain,condition\n'+rec.rows.join('\n'),'text/csv');
 
@@ -336,18 +405,18 @@ function dialDraw(el){const k=el.dataset.k,[mn,mx,st,u]=DL[k],v=S.cfg[k],f=Math.
   t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 1 1 '+s1[0]+' '+s1[1]+'" fill="none" stroke="var(--sd)" stroke-width="5" stroke-linecap="round"/>';
   if(f>0)t+='<path d="M'+s0[0]+' '+s0[1]+' A47 47 0 '+(270*f>180?1:0)+' 1 '+e[0]+' '+e[1]+'" fill="none" stroke="var(--ac)" stroke-width="5" stroke-linecap="round"/>';
   el.querySelector('svg').innerHTML=t;el.querySelector('.knob').style.setProperty('--a',a+'deg');el.setAttribute('aria-valuenow',v);el.parentNode.querySelector('.dv').textContent=v+' '+u}
-function dialSet(el,v){const k=el.dataset.k,[mn,mx,st]=DL[k];v=+(Math.round(Math.min(mx,Math.max(mn,v))/st)*st).toFixed(2);S.cfg[k]=v;save();dialDraw(el)}
+function dialSet(el,v,snd){const k=el.dataset.k,[mn,mx,st]=DL[k],old=S.cfg[k];v=+(Math.round(Math.min(mx,Math.max(mn,v))/st)*st).toFixed(2);S.cfg[k]=v;save();dialDraw(el);if(snd&&v!==old)knobTick((v-mn)/(mx-mn))}
 function buildSet(){$('set').innerHTML=Object.keys(NAMES).map(k=>'<div class="dialw"><div class="dial" data-k="'+k+'" tabindex="0" role="slider" aria-label="'+NAMES[k]+'" aria-valuemin="'+DL[k][0]+'" aria-valuemax="'+DL[k][1]+'"><svg viewBox="0 0 130 130"></svg><div class="knob"><i></i></div></div><div class="dv"></div><label style="margin:0">'+NAMES[k]+'</label></div>').join('');
   $('set').querySelectorAll('.dial').forEach(el=>{const k=el.dataset.k,[mn,mx,st]=DL[k];dialDraw(el);
-    let lv=0,lt=0,pv=0;const mv=e=>{const b=el.getBoundingClientRect();let a=Math.atan2(e.clientX-b.left-b.width/2,-(e.clientY-b.top-b.height/2))*180/Math.PI;if(Math.abs(a)>135)a=a<0?-135:135;dialSet(el,mn+(a+135)/270*(mx-mn));const t=performance.now();if(lt)lv=(S.cfg[k]-pv)/Math.max(.016,(t-lt)/1000);pv=S.cfg[k];lt=t};
-    el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);mv(e)};el.onpointermove=e=>{if(el.hasPointerCapture(e.pointerId))mv(e)};el.onpointerup=()=>{if(window.fling&&lt)fling(el,k,performance.now()-lt<90?lv:0);lt=0;lv=0};
-    el.onwheel=e=>{e.preventDefault();dialSet(el,S.cfg[k]+(e.deltaY<0?1:-1)*st)};
-    el.onkeydown=e=>{const d={ArrowUp:1,ArrowRight:1,ArrowDown:-1,ArrowLeft:-1}[e.key];if(d){e.preventDefault();dialSet(el,S.cfg[k]+d*st)}}})}
+    let lv=0,lt=0,pv=0;const mv=e=>{const b=el.getBoundingClientRect();let a=Math.atan2(e.clientX-b.left-b.width/2,-(e.clientY-b.top-b.height/2))*180/Math.PI;if(Math.abs(a)>135)a=a<0?-135:135;dialSet(el,mn+(a+135)/270*(mx-mn),true);const t=performance.now();if(lt)lv=(S.cfg[k]-pv)/Math.max(.016,(t-lt)/1000);pv=S.cfg[k];lt=t};
+    el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);knobStop();if(window.flingStop)flingStop(el);mv(e)};el.onpointermove=e=>{if(el.hasPointerCapture(e.pointerId))mv(e)};el.onpointerup=()=>{if(window.fling&&lt)fling(el,k,performance.now()-lt<90?lv:0);lt=0;lv=0};
+    el.onwheel=e=>{e.preventDefault();dialSet(el,S.cfg[k]+(e.deltaY<0?1:-1)*st,true)};
+    el.onkeydown=e=>{const d={ArrowUp:1,ArrowRight:1,ArrowDown:-1,ArrowLeft:-1}[e.key];if(d){e.preventDefault();dialSet(el,S.cfg[k]+d*st,true)}}})}
 $('bDef').onclick=()=>{S.cfg={...DEF};save();buildSet()};
 $('bAck').onclick=()=>{acked=true;$('ban').style.display='none'};
 setInterval(()=>{if(lastLvl>=3&&!acked)play(lastLvl===4?'overflow':'risk',true)},3000);
 
-function setConn(ok){if(ok===connected)return;connected=ok;play(ok?'connect':'disconnect');if(ok)dripFlash('wave',2200,'Hi! Board connected.');
+function setConn(ok){if(ok===connected)return;connected=ok;play(ok?'connect':'disconnect');if(ok)dripFlash('wave',2200,'Board connected.');
   $('conn').innerHTML='<span class="dot" style="background:'+(ok?'var(--ok)':'var(--mu)')+'"></span>'+(ok?'Connected':'Not connected, retrying…')}
 setInterval(()=>{if(connected&&Date.now()-lastRx>5000){$('hl').innerHTML='<span style="color:#ef4444">No data for '+Math.round((Date.now()-lastRx)/1000)+' s: check cable and firmware</span>'}},1000);
 const raw=l=>{const r=$('raw');r.textContent+=l+'\n';if(r.textContent.length>6000)r.textContent=r.textContent.slice(-4000);r.scrollTop=r.scrollHeight};
@@ -370,7 +439,7 @@ $('bDemo').onclick=()=>{if(demo){stopDemo();return}
   $('bDemo').classList.add('on');$('scen').style.display='flex';hist=[];lastLvl=0;tick=0;scen='normal';$('scen').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',i===0));
   $('conn').innerHTML='<span class="dot" style="background:var(--p1)"></span>Demo data';
   const n=()=>Math.random()-.5;
-  demo=setInterval(()=>{tick++;const p={normal:[4.2,12.5,850,0],partial:[2,11,1150,0],rain:[4.1,10.8,860,1],both:[1.6,8.5,1200,1],over:[.9,1.8,1300,1]}[scen];
+  demo=setInterval(()=>{tick++;const p={normal:[4.2,12.5,850,0],partial:[2,11,1150,0],rain:[4.1,10.8,860,1],both:[1.6,8.5,1200,1],over:[.9,1.8,1300,1]}[calBuf?'normal':scen];
     onData({flow:p[0]+n()*.2,dist:p[1]+n()*.2,turb:p[2]+n()*30,rain:p[3]});if(tick===2&&!S.base)calBuf=[]},1000)};
 $('scen').onclick=e=>{if(e.target.dataset.s){scen=e.target.dataset.s;$('scen').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===e.target));msg('Demo scenario: '+e.target.textContent)}};
 
@@ -401,16 +470,16 @@ function smsSend(text,test){const n=numList();if(!n.length){smsLog('No valid mob
   if(!tx({cmd:'sms',to:n[0],msg:text})){smsLog('Not sent: board not connected');return false}
   n.slice(1).forEach(to=>tx({cmd:'sms',to,msg:text}));smsLog((test?'Test sent to ':'Sent to ')+n.join(', ')+' via the board');return true}
 function maybeSms(r,s){if(!S.sms.on||r.lvl<Math.max(S.sms.min,window.quietSmsMin?quietSmsMin():0))return;if(Date.now()-smsLast<S.sms.cool*60000&&r.lvl<=smsLastLvl)return;
-  const m=('FlowSense'+(window.curNodeName?' ['+window.curNodeName+']':'')+': '+s.n+'. '+r.cause+'. '+r.ev.join(', ')+'. '+new Date().toLocaleString('en-IN')).replace(/[^\x20-\x7e]/g,'').slice(0,160);
+  const m=('FlowBeacon'+(window.curNodeName?' ['+window.curNodeName+']':'')+': '+s.n+'. '+r.cause+'. '+r.ev.join(', ')+'. '+new Date().toLocaleString('en-IN')).replace(/[^\x20-\x7e]/g,'').slice(0,160);
   if(smsSend(m,false)){smsLast=Date.now();smsLastLvl=r.lvl}}
 $('smsOn').checked=S.sms.on;$('smsNum').value=S.sms.nums;$('smsMin').value=S.sms.min;$('smsCool').value=S.sms.cool;
 $('smsOn').onchange=e=>{S.sms.on=e.target.checked;save()};$('smsNum').oninput=e=>{S.sms.nums=e.target.value;save()};
 $('smsMin').onchange=e=>{S.sms.min=+e.target.value;save()};$('smsCool').onchange=e=>{S.sms.cool=+e.target.value;save()};
-$('bSmsT').onclick=()=>smsSend('FlowSense: test message from the app.',true);
-$('bSmsP').onclick=()=>{const n=numList();if(!n.length){smsLog('No valid mobile number');return}location.href='sms:'+n[0]+'?body='+encodeURIComponent('FlowSense: '+($('cond').textContent||'status'))};
+$('bSmsT').onclick=()=>smsSend('FlowBeacon: test message from the app.',true);
+$('bSmsP').onclick=()=>{const n=numList();if(!n.length){smsLog('No valid mobile number');return}location.href='sms:'+n[0]+'?body='+encodeURIComponent('FlowBeacon: '+($('cond').textContent||'status'))};
 
 const R=216/174,EL={},PL=[35,65];
-const POS={eyes_open:[50,57,54],eyes_closed:[50,58,52],brows_up:[50,41,50],brows_angry:[50,43,46],brows_worried:[50,42,56],mouth_smile:[50,72,15],mouth_open:[50,73,13],mouth_worried:[50,74,18],mouth_scream:[50,74,22],mouth_sleep:[50,73,16],hardhat:[50,6,52],umbrella:[52,-14,70],sweat_drop:[82,44,12],zzz:[88,-4,34],stars:[50,-6,56],tick:[92,18,26],pupil_l:[35,58,9.5],pupil_r:[65,58,9.5],arm_left:[-1,66,21],arm_right:[101,66,21],arm_wave:[104,50,38],arm_up:[101,52,29],arm_up2:[-1,52,29]};
+const POS={eyes_open:[50,57,54],eyes_closed:[50,58,52],brows_up:[50,41,50],brows_angry:[50,43,46],brows_worried:[50,42,56],mouth_smile:[50,72,15],mouth_open:[50,73,13],mouth_worried:[50,74,18],mouth_scream:[50,74,22],mouth_sleep:[50,73,16],hardhat:[50,6,52],umbrella:[1.5,23,54],sweat_drop:[82,44,12],zzz:[88,-4,34],stars:[50,-6,56],tick:[92,18,26],pupil_l:[35,58,9.5],pupil_r:[65,58,9.5],arm_left:[-1,66,21],arm_right:[101,66,21],arm_wave:[104,50,38],arm_up:[101,52,29],arm_up2:[-1,52,29]};
 function mk(k,src,cls){const i=document.createElement('img');i.src=DRIP[src||k][2];i.alt='';i.draggable=false;i.className='dp '+(cls||'');i.dataset.k=k;i.style.display='none';$('dbody').appendChild(i);EL[k]=i;
   const q=POS[k];if(q){const[sw,sh]=DRIP[src||k],h=q[2]*sh/sw/R,st=i.style;st.left=(q[0]-q[2]/2)+'%';st.top=(q[1]-h/2)+'%';st.width=q[2]+'%';st.height=h+'%'}}
 mk('body');Object.assign(EL.body.style,{display:'block',left:0,top:0,width:'100%',height:'100%',zIndex:1});
@@ -432,13 +501,13 @@ const GREET=['Hi, I am Drip!','Watching your drain.','Tap me any time.','Need a 
 const FACTS=['Plastic and silt are the top causes of clogged drains.','Clearing drains before the monsoon prevents most street flooding.','A drain can lose half its flow before anyone notices.','Flow falling while the level rises is the classic blockage sign.'];
 let cur='',flash=null,fu=0,lastRainState=0;
 function look(ux,uy){const bw=$('dbody').offsetWidth;['pupil_l','pupil_r'].forEach(k=>EL[k].style.transform='translate('+ux*.04*bw+'px,'+uy*.035*bw+'px)')}
-function apply(n){const x=EX[n],sh=new Set(['body',x.e==='c'?'eyes_closed':'eyes_open',x.b,x.m,x.l,x.r].concat(x.x||[]));
-  if(x.e!=='c'){sh.add('pupil_l');sh.add('pupil_r')}if(prevRain)sh.add('umbrella');
+function apply(n){const x=EX[n],E={o:['eyes_open'],c:['eyes_closed'],wl:['ec_l','eo_r'],wr:['eo_l','ec_r']}[x.e||'o']||['eyes_open'],sh=new Set(['body'].concat(E,[x.b,x.m,x.l,x.r],x.x||[],window.dripWear?dripWear():[]));
+  if(x.e!=='c'){if(x.e!=='wl')sh.add('pupil_l');if(x.e!=='wr')sh.add('pupil_r')}if(prevRain){sh.add('umbrella');sh.delete(x.l);sh.add('arm_up2')}
   for(const k in EL)EL[k].style.display=sh.has(k)?'block':'none';
   $('dw').className='a-'+x.a;if(x.look)look(x.look[0],x.look[1])}
 function baseState(){if(!demo&&(!connected||Date.now()-lastRx>5000))return'sleep';if(dripFault)return'dizzy';if(lastLvl>=4)return'panic';if(lastLvl===3)return'alarmed';if(lastLvl===2)return'worried';if(lastLvl===1)return'curious';if(calBuf||wz.buf)return'think';return'idle'}
 function dripSay(t,ms=4500){const b=$('bub');b.textContent=tr(t);b.classList.add('on');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('on'),ms)}
-function dripSync(){const t=Date.now(),n=t<fu?flash:baseState();if(n!==cur||prevRain!==lastRainState){const ch=n!==cur;cur=n;lastRainState=prevRain;apply(n);if(ch&&MSG[n]&&t>=fu)dripSay(MSG[n])}}
+function dripSync(){const t=Date.now(),n=t<fu?flash:baseState();if(n!==cur||prevRain!==lastRainState){const ch=n!==cur;cur=n;lastRainState=prevRain;apply(n);if(ch&&MSG[n]&&t>=fu)dripSay(window.dripLine?dripLine(n,MSG[n]):MSG[n])}}
 function dripFlash(n,ms,text){flash=n;fu=Date.now()+ms;dripSync();if(text)dripSay(text);setTimeout(dripSync,ms+50)}
 document.addEventListener('pointermove',e=>{const x=EX[cur];if(!x||x.look)return;const b=$('dbody').getBoundingClientRect(),dx=e.clientX-(b.left+b.width/2),dy=e.clientY-(b.top+b.height*.57),d=Math.hypot(dx,dy)||1,k=Math.min(1,d/220);look(dx/d*k,dy/d*k)});
 (function bl(){setTimeout(()=>{const x=EX[cur];if(x&&x.e==='o'&&$('drip').offsetParent){['eyes_open','pupil_l','pupil_r'].forEach(k=>EL[k].style.display='none');EL.eyes_closed.style.display='block';setTimeout(()=>{if(EX[cur]===x)apply(cur)},140)}bl()},3000+Math.random()*2500)})();
@@ -446,15 +515,16 @@ const dr=$('drip');let dg=null;
 dr.onpointerdown=e=>{dg={x:e.clientX,y:e.clientY,m:false};dr.setPointerCapture(e.pointerId);dr.style.transition='none';dr.style.cursor='grabbing'};
 dr.onpointermove=e=>{if(!dg)return;const dx=e.clientX-dg.x,dy=e.clientY-dg.y;if(Math.hypot(dx,dy)>5)dg.m=true;if(dg.m)dr.style.transform='translate('+dx+'px,'+dy+'px)'};
 dr.onpointerup=()=>{if(!dg)return;const m=dg.m;dg=null;dr.style.cursor='grab';dr.style.transition='transform .5s cubic-bezier(.3,1.6,.5,1)';dr.style.transform='none';if(m)dripSay('Whee! Back home.');else dripFlash('happy',1400,GREET[Math.floor(Math.random()*GREET.length)])};
-dr.ondblclick=()=>{const b=$('dbody');b.classList.remove('spin');void b.offsetWidth;b.classList.add('spin');dripSay(FACTS[Math.floor(Math.random()*FACTS.length)],6000)};
-dr.onpointerenter=()=>{if(cur==='idle'&&Date.now()>=fu)dripFlash('wave',1800)};
 $('dbody').addEventListener('animationend',e=>{if(e.target===$('dbody'))e.target.classList.remove('spin')});
 $('dripOn').checked=S.drip!==false;dr.style.display=$('dripOn').checked?'block':'none';
 $('dripOn').onchange=e=>{S.drip=e.target.checked;dr.style.display=S.drip?'block':'none';save()};
 setInterval(dripSync,1000);dripSync();
-$('bSetup').onclick=()=>{if(window.flowsense)window.flowsense.openSetup()};
+$('bSetup').onclick=()=>{if(window.flowbeacon)window.flowbeacon.openSetup()};
 $('vol').value=S.vol*100;$('vol').style.setProperty('--v',S.vol*100+'%');$('snd').checked=!S.mute;buildSet();renderLog();draw();
 </script>
 <script src="features.js"></script>
+<script src="drip-brain.js"></script>
+<script src="map.js"></script>
+<script src="update.js"></script>
 </body>
 </html>

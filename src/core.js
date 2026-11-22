@@ -36,7 +36,7 @@
     let lvl = 0, ev = [], pts = 0, fd = 0, rise = 0, td = 0, z = 0, cause = 'No fault indicated';
     if (b) {
       fd = b.flow > 0 ? 1 - d.flow / b.flow : 0;
-      rise = b.dist - d.dist;
+      rise = h.bad ? 0 : b.dist - d.dist;
       td = b.turb > 0 ? (d.turb - b.turb) / b.turb : 0;
       z = Math.max(Math.abs(d.flow - b.flow) / b.sf, h.bad ? 0 : Math.abs(d.dist - b.dist) / b.sd);
       if (fd > 0.05) ev.push('Flow ' + (-fd * 100).toFixed(0) + '% vs baseline');
