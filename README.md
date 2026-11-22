@@ -1,4 +1,4 @@
-FlowSense
+FlowBeacon
 Smart Drainage Monitoring & Blockage Prediction System
 Developed by TechMinds
 An Electron desktop application for monitoring a Smart Drainage Alert and Blockage Prediction System built around an ESP32-S3 prototype.
@@ -8,7 +8,7 @@ An Electron desktop application for monitoring a Smart Drainage Alert and Blocka
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
   <img src="https://img.shields.io/badge/Status-Prototype-yellow?style=for-the-badge" alt="Prototype" />
 </p>Overview
-FlowSense is a desktop monitoring application for the Smart Drainage Alert and Blockage Prediction System. It works with an ESP32-S3 hardware prototype to display drainage sensor readings, identify abnormal conditions, and provide alerts about possible blockages and overflow risks.
+FlowBeacon is a desktop monitoring application for the Smart Drainage Alert and Blockage Prediction System. It works with an ESP32-S3 hardware prototype to display drainage sensor readings, identify abnormal conditions, and provide alerts about possible blockages and overflow risks.
 
 The application is intended for prototype monitoring, testing, and analysis. Its assessments depend on the connected sensors, calibration, firmware, and deployment conditions; predictions should not be treated as a substitute for physical inspection or safety procedures.
 Features
@@ -23,11 +23,11 @@ Sensor calibration	Includes calibration controls and a guided calibration wizard
 Incident history	Records and displays drainage incidents.
 PDF reports	Generates incident reports.
 CSV recording	Records sensor readings for testing and analysis.
-Drip mascot	Provides application notifications through the FlowSense mascot.
+Drip mascot	Provides application notifications through the FlowBeacon mascot.
 
 
 Monitoring Parameters
-FlowSense is designed to monitor four drainage parameters:
+FlowBeacon is designed to monitor four drainage parameters:
 - Water flow — detects changes in drainage flow.
 - Water level — tracks changes in water level.
 - Turbidity — monitors turbidity readings.
@@ -84,7 +84,7 @@ git tag vX.Y.Z
 git push origin vX.Y.Z
 After the workflow finishes, review the run and confirm that the expected Windows and Linux assets are attached to the GitHub Release. A workflow artifact is not a substitute for checking the public release page.
 ESP32-S3 Integration
-FlowSense supports communication with the ESP32-S3 prototype through:
+FlowBeacon supports communication with the ESP32-S3 prototype through:
 - USB serial communication
 - Wi-Fi communication
 - GSM-based SMS notifications through the connected hardware
@@ -104,7 +104,7 @@ Linux guidance includes:
 - Common serial-access groups such as dialout or uucp, depending on the distribution
 The setup assistant can also be opened from Help → Setup. Driver installation and permission changes should be performed only when needed and with the operating system's normal security prompts.
 Privacy and Data Handling
-FlowSense supports USB serial and Wi-Fi communication with an ESP32-S3 prototype and GSM-based SMS notifications through connected hardware. It also includes incident-history, CSV-recording, and PDF-report features.
+FlowBeacon supports USB serial and Wi-Fi communication with an ESP32-S3 prototype and GSM-based SMS notifications through connected hardware. It also includes incident-history, CSV-recording, and PDF-report features.
 
 The exact data stored, storage locations, Wi-Fi destinations, SMS recipients, retention periods, and available opt-out controls must be documented for the actual application and hardware configuration. This README does not claim that all deployments are offline-only or that no information is transmitted.
 
@@ -125,15 +125,14 @@ If the project is accepted by SignPath Foundation and the repository is configur
 2. The workflow submits the eligible artifact to the configured SignPath project and signing policy.
 3. The required project approver(s) review and approve the signing request.
 4. The completed signed artifact is retrieved, verified, and published as the release asset.
-Only binaries built from this project's source code should be submitted for signing. Third-party components must not be represented as binaries authored by FlowSense. Product name and version metadata on signed files must match the FlowSense product and the release version.
+Only binaries built from this project's source code should be submitted for signing. Third-party components must not be represented as binaries authored by FlowBeacon. Product name and version metadata on signed files must match the FlowBeacon product and the release version.
 Technology
 - Desktop framework: Electron
 - Packaging: electron-builder
 - Hardware platform: ESP32-S3
 - Build automation: GitHub Actions
-- Application identifier: com.techminds.flowsense
 Credits and Attributions
-- Project: FlowSense
+- Project: FlowBeacon
 - Developer / project label: TechMinds
 - Hardware: ESP32-S3
 - Desktop framework: Electron
@@ -141,8 +140,8 @@ Credits and Attributions
 - Drip mascot artwork: TechMinds
 - TechMinds logo: TechMinds
 License
-FlowSense is released under the MIT License. See the LICENSE file for the complete license text.
+FlowBeacon is released under the MIT License. See the LICENSE file for the complete license text.
 <p align="center">
-  <strong>FlowSense — Detect Early. Alert Smart. Prevent Overflow.</strong><br />
+  <strong>FlowBeacon — Detect Early. Alert Smart. Prevent Overflow.</strong><br />
   <sub>Developed by TechMinds</sub>
 </p>
