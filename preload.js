@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('flowsense', {
+contextBridge.exposeInMainWorld('flowbeacon', {
   platform: process.platform,
   runSetup: () => ipcRenderer.invoke('setup:run'),
   onStep: cb => ipcRenderer.on('setup:step', (e, d) => cb(d)),
@@ -15,5 +15,7 @@ contextBridge.exposeInMainWorld('flowsense', {
   log: text => ipcRenderer.invoke('app:log', text),
   openLog: () => ipcRenderer.invoke('app:open-log'),
   checkUpdate: () => ipcRenderer.invoke('app:check-update'),
+  onUpdate: cb => ipcRenderer.on('app:update', (e, d) => cb(d)),
+  installUpdate: () => ipcRenderer.invoke('app:update:install'),
   openUrl: url => ipcRenderer.invoke('app:open-url', url)
 });

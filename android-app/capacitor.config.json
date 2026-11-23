@@ -1,0 +1,8 @@
+{
+  "appId": "com.techminds.flowbeacon",
+  "appName": "FlowBeacon",
+  "webDir": "www",
+  "backgroundColor": "#e0d8d2",
+  "server": { "androidScheme": "http", "cleartext": true },
+  "android": { "allowMixedContent": true }
+}

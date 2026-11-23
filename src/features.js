@@ -1,8 +1,8 @@
 (function () {
-  const FSB = window.flowsense || {};
+  const FB = window.flowbeacon || {};
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const logErr = m => { try { if (FSB.log) FSB.log(String(m)); } catch (e) {} };
+  const logErr = m => { try { if (FB.log) FB.log(String(m)); } catch (e) {} };
   window.addEventListener('error', e => logErr('error: ' + e.message + ' @' + (e.filename || '') + ':' + e.lineno));
   window.addEventListener('unhandledrejection', e => logErr('rejection: ' + ((e.reason && e.reason.stack) || e.reason)));
 
@@ -72,14 +72,14 @@
     '(estimate)': '(மதிப்பீடு)', 'Sensor check': 'உணரி சோதனை', 'Sensors look healthy': 'உணரிகள் சீராக உள்ளன', 'Readings match baseline': 'அளவீடுகள் அடிப்படைக்கு ஏற்ப உள்ளன',
     'Set a baseline while flow is normal': 'ஓட்டம் இயல்பாக இருக்கும்போது அடிப்படை அளவை அமைக்கவும்', 'No fault indicated': 'குறைபாடு எதுவும் இல்லை',
     'Blockage and rainfall likely both contributing': 'அடைப்பும் மழையும் சேர்ந்து காரணமாக இருக்கலாம்', 'Rainfall likely contributing to rising level': 'மழையால் நீர்மட்டம் உயர்கிறது',
-    'Water level high; cause unclear': 'நீர்மட்டம் அதிகம்; காரணம் தெளிவில்லை', 'Unusual pattern against baseline': 'அடிப்படைக்கு மாறான அசாதாரண முறை', 'Drains': 'வடிகால்கள்', 'History': 'வரலாறு',
+    'Water level high; cause unclear': 'நீர்மட்டம் அதிகம்; காரணம் தெளிவில்லை', 'Unusual pattern against baseline': 'அடிப்படைக்கு மாறான அசாதாரண முறை', 'Drains': 'வடிகால்கள்', 'Ask Drip': 'டிரிப்பிடம் கேளுங்கள்', 'Speak alerts aloud': 'எச்சரிக்கைகளை ஒலியாகச் சொல்', 'Interface sounds': 'இடைமுக ஒலிகள்', 'History': 'வரலாறு',
     'Appearance and behaviour': 'தோற்றமும் செயல்பாடும்', 'Language': 'மொழி', 'Text size': 'எழுத்து அளவு', 'Reduce motion': 'அசைவைக் குறை', 'Rename': 'பெயர் மாற்று', 'Learn from recordings': 'பதிவுகளிலிருந்து கற்றுக்கொள்',
     'Replay a recording': 'பதிவை மீண்டும் இயக்கு', 'Calibration profiles': 'அளவுத்திருத்த சுயவிவரங்கள்', 'Notifications': 'அறிவிப்புகள்', 'Quiet hours': 'அமைதி நேரம்', 'Switching…': 'மாற்றுகிறது…',
-    'Hi, I am Drip!': 'வணக்கம், நான் டிரிப்!', 'Hi! Board connected.': 'வணக்கம்! போர்டு இணைந்தது.', 'Baseline saved!': 'அடிப்படை அளவு சேமிக்கப்பட்டது!', 'Back to normal!': 'மீண்டும் இயல்பு நிலை!',
-    'Rain detected. Umbrella up!': 'மழை கண்டறியப்பட்டது. குடை விரிக்கிறேன்!', 'Hmm, flow looks lower than usual.': 'ம்ம், ஓட்டம் வழக்கத்தை விட குறைவு.',
+    'Hi, I am Drip!': 'வணக்கம், நான் டிரிப்!', 'Board connected.': 'போர்டு இணைக்கப்பட்டது.', 'Baseline saved!': 'அடிப்படை அளவு சேமிக்கப்பட்டது!', 'Back to normal!': 'மீண்டும் இயல்பு நிலை!',
+    'Rain detected.': 'மழை கண்டறியப்பட்டது.', 'Hmm, flow looks lower than usual.': 'ம்ம், ஓட்டம் வழக்கத்தை விட குறைவு.',
     'Blockage warning! Flow is dropping while the level rises.': 'அடைப்பு எச்சரிக்கை! நீர்மட்டம் உயரும்போது ஓட்டம் குறைகிறது.', 'Overflow risk! Please check the drain.': 'வழிதல் அபாயம்! வடிகாலைச் சரிபார்க்கவும்.',
     'OVERFLOW! Water has reached the limit!': 'வழிதல்! நீர் எல்லையை எட்டியது!', 'Zzz... waiting for the board.': 'Zzz... போர்டுக்காக காத்திருக்கிறேன்.', 'Calibrating. Keep the flow steady.': 'அளவுத்திருத்தம் நடக்கிறது. ஓட்டத்தை சீராக வைக்கவும்.',
-    'A sensor looks faulty. Check the wiring.': 'ஒரு உணரி பழுதாகத் தெரிகிறது. வயரிங்கைச் சரிபார்க்கவும்.', 'Whee! Back home.': 'வீ! வீட்டுக்குத் திரும்பினேன்.', 'Wheee!': 'வீஈ!'
+    'A sensor looks faulty. Check the wiring.': 'ஒரு உணரி பழுதாகத் தெரிகிறது. வயரிங்கைச் சரிபார்க்கவும்.'
   };
   window.trans = s => {
     if (S.lang !== 'ta' || typeof s !== 'string') return s;
@@ -134,6 +134,7 @@
       return { id, name: S.nodes[id].name, lvl: a ? lastLvl : (n.lvl || 0), acked: a ? acked : !!n.acked, rx: n.rx || 0, last: n.last };
     });
   }
+  window.fbNodes = allNodes;
   function banner() {
     const w = allNodes().filter(x => x.lvl >= 3 && !x.acked).sort((a, b) => b.lvl - a.lvl)[0], b = $('ban');
     if (w) { b.style.display = 'flex'; $('banT').textContent = tr(ST_[w.lvl].n) + ' · ' + w.name; } else b.style.display = 'none';
@@ -143,10 +144,10 @@
 
   let lastSent = -1;
   function bridge() {
-    if (!FSB.setLevel) return;
+    if (!FB.setLevel) return;
     let m = 0, who = '';
     allNodes().forEach(x => { if (x.lvl > m) { m = x.lvl; who = x.name; } });
-    if (m !== lastSent) { lastSent = m; FSB.setLevel(m, 'FlowSense: ' + ST_[m].n + (who ? ' (' + who + ')' : '')); }
+    if (m !== lastSent) { lastSent = m; FB.setLevel(m, 'FlowBeacon: ' + ST_[m].n + (who ? ' (' + who + ')' : '')); }
   }
 
   function tiles() {
@@ -179,7 +180,7 @@
     const id = String(d.node || 'drain-1'), n = nrec(id);
     n.last = d;
     n.rx = Date.now();
-    if (active === null) { active = id; loadN(id); }
+    if (active === null && !/^demo-/.test(id)) { active = id; loadN(id); }
     window.curNodeName = S.nodes[id].name;
     if (id === active) { onBase(d); storeN(id); }
     else {
@@ -202,7 +203,7 @@
   const B = {};
   let lastRows = [];
   if (window.indexedDB) {
-    const rq = indexedDB.open('flowsense', 1);
+    const rq = indexedDB.open('flowbeacon', 1);
     rq.onupgradeneeded = () => { rq.result.createObjectStore('min', { keyPath: ['node', 't'] }); };
     rq.onsuccess = () => { idb = rq.result; prune(); renderHist(); };
     rq.onerror = () => {};
@@ -215,7 +216,7 @@
     const m = Math.floor(Date.now() / 60000) * 60000;
     let b = B[id];
     if (!b || b.t !== m) { flush(b); b = B[id] = { node: id, t: m, n: 0, f: 0, l: 0, tb: 0, r: 0, lvl: 0 }; }
-    b.n++; b.f += d.flow; b.l += d.dist; b.tb += d.turb; b.r += d.rain; b.lvl = Math.max(b.lvl, lvl);
+    b.n++; b.f += +d.flow || 0; b.l += +d.dist || 0; b.tb += +d.turb || 0; b.r += d.rain ? 1 : 0; b.lvl = Math.max(b.lvl, lvl);
   }
   window.addEventListener('beforeunload', () => Object.values(B).forEach(flush));
   setInterval(() => Object.values(B).forEach(b => { if (b.t < Date.now() - 60000) flush(b); }), 60000);
@@ -273,10 +274,13 @@
     $('ml').textContent = 'Learned model: ' + p.label + ' (' + Math.round(p.p * 100) + '%)';
   }
   async function readCsv(file) { return Core.parseCSV(await file.text()).map(r => Object.assign(r, { label: r.label || file.name.replace(/\.csv$/i, '') })); }
+  let replaying = false;
+  const stopDemoBase = stopDemo;
+  stopDemo = function () { stopDemoBase(); replaying = false; const g = document.getElementById('rGo'); if (g) g.textContent = 'Play'; };
   function stopReplay() { stopDemo(); }
   function startReplay(rows, speed) {
     stopDemo();
-    if (!S.base && rows.length >= 10) mkBase(Core.baseFrom(rows.slice(0, 10)));
+    if (!S.base && rows.length >= 10) mkBase(rows.slice(0, 10));
     let i = 0;
     $('conn').innerHTML = '<span class="dot" style="background:var(--p1)"></span>Replay';
     demo = setInterval(() => {
@@ -285,6 +289,8 @@
       onData({ flow: x.flow, dist: x.dist, turb: x.turb, rain: x.rain });
     }, Math.max(40, 1000 / speed));
     $('rMsg').textContent = 'Playing ' + rows.length + ' readings…';
+    replaying = true;
+    $('rGo').textContent = 'Stop';
   }
 
   function report() {
@@ -292,7 +298,7 @@
     try { img = $('cv').toDataURL('image/png'); } catch (e) {}
     const c = [0, 0, 0, 0, 0];
     S.inc.forEach(i => { c[i.lvl]++; });
-    $('rep').innerHTML = '<img src="img/techminds.png" style="height:60px"><h1 style="color:#000;background:none">FlowSense: incident report</h1><p>Generated ' + new Date().toLocaleString() + '. Prototype estimates, not confirmed measurements.</p>' +
+    $('rep').innerHTML = '<img src="img/techminds.png" style="height:60px"><h1 style="color:#000;background:none">FlowBeacon: incident report</h1><p>Generated ' + new Date().toLocaleString() + '. Prototype estimates, not confirmed measurements.</p>' +
       '<h3>Summary</h3><table><tr><th>Incidents</th><th>Possible blockage</th><th>Blockage warning</th><th>Overflow risk</th><th>Overflow</th></tr><tr><td>' + S.inc.length + '</td><td>' + c[1] + '</td><td>' + c[2] + '</td><td>' + c[3] + '</td><td>' + c[4] + '</td></tr></table>' +
       (img ? '<h3>Recent trend</h3><img src="' + img + '" style="width:100%;max-height:220px">' : '') +
       '<h3>Incidents</h3><table><tr><th>Time</th><th>Drain</th><th>Condition</th><th>Likely cause</th><th>Sensor evidence</th><th>Severity</th><th>Confidence</th></tr>' +
@@ -338,8 +344,8 @@
     applyTheme();
   };
 
-  const sendSet = o => { if (FSB.setSettings) FSB.setSettings(o); };
-  if (FSB.getSettings) FSB.getSettings().then(s => {
+  const sendSet = o => { if (FB.setSettings) FB.setSettings(o); };
+  if (FB.getSettings) FB.getSettings().then(s => {
     $('bTray').checked = !!s.closeToTray; $('bStart').checked = !!s.startWithPc;
     $('rowStart').style.display = s.platform === 'win32' ? '' : 'none';
     $('aMsg').textContent = 'Version ' + s.version;
@@ -347,21 +353,21 @@
   else { $('bTray').disabled = true; $('bStart').disabled = true; }
   $('bTray').onchange = e => sendSet({ closeToTray: e.target.checked });
   $('bStart').onchange = e => sendSet({ startWithPc: e.target.checked });
-  $('bLog').onclick = () => { if (FSB.openLog) FSB.openLog(); };
-  function showUpd(r) { $('updT').textContent = 'FlowSense ' + r.latest + ' is available (you have ' + r.current + ').'; $('upd').style.display = 'flex'; $('updB').onclick = () => FSB.openUrl(r.url); }
+  $('bLog').onclick = () => { if (FB.openLog) FB.openLog(); };
+  function showUpd(r) { $('updT').textContent = 'FlowBeacon ' + r.latest + ' is available (you have ' + r.current + ').'; $('upd').style.display = 'flex'; $('updB').onclick = () => FB.openUrl(r.url); }
   $('bUpNow').onclick = async () => {
-    if (!FSB.checkUpdate) return;
+    if (!FB.checkUpdate) return;
     $('aMsg').textContent = 'Checking…';
-    const r = await FSB.checkUpdate();
+    const r = await FB.checkUpdate();
     if (r.error) $('aMsg').textContent = 'Could not check: ' + r.error;
     else if (r.newer) { $('aMsg').textContent = 'Version ' + r.latest + ' is available.'; showUpd(r); }
     else $('aMsg').textContent = 'You have the latest version (' + r.current + ').';
   };
-  if (FSB.checkUpdate && S.upd) setTimeout(() => FSB.checkUpdate().then(r => { if (r && r.newer) showUpd(r); }).catch(() => {}), 6000);
+  if (FB.checkUpdate && S.upd) setTimeout(() => FB.checkUpdate().then(r => { if (r && r.newer) showUpd(r); }).catch(() => {}), 6000);
 
   $('bNr').onclick = () => { const v = $('nname').value.trim(); if (v && active) { S.nodes[active].name = v; save(); tiles(); $('hNode').innerHTML = ''; tiles(); } };
   $('hGo').onclick = renderHist; $('hNode').onchange = renderHist; $('hRange').onchange = renderHist;
-  $('hCsv').onclick = () => dl('flowsense-history.csv', ['node,time,minutes,avg_flow,avg_dist,avg_turb,rain_fraction,worst_level'].concat(lastRows.map(r => [r.node, new Date(r.t).toISOString(), r.n, r.f.toFixed(3), r.l.toFixed(2), r.tb.toFixed(0), r.r.toFixed(2), r.lvl].join(','))).join('\n'), 'text/csv');
+  $('hCsv').onclick = () => dl('flowbeacon-history.csv', ['node,time,minutes,avg_flow,avg_dist,avg_turb,rain_fraction,worst_level'].concat(lastRows.map(r => [r.node, new Date(r.t).toISOString(), r.n, r.f.toFixed(3), r.l.toFixed(2), r.tb.toFixed(0), r.r.toFixed(2), r.lvl].join(','))).join('\n'), 'text/csv');
   $('bRep').onclick = report;
 
   function profs() { $('pSel').innerHTML = S.profiles.map((p, i) => '<option value="' + i + '">' + esc(p.name) + '</option>').join(''); }
@@ -373,7 +379,7 @@
   let replayRows = [], trainRows = [];
   $('rPick').onclick = () => $('rFile').click();
   $('rFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; replayRows = await readCsv(f); $('rGo').disabled = !replayRows.length; $('rMsg').textContent = replayRows.length ? f.name + ': ' + replayRows.length + ' readings' : 'No readings found in that file.'; };
-  $('rGo').onclick = () => { if (demo) { stopReplay(); $('rGo').textContent = 'Play'; return; } startReplay(replayRows, +$('rSpeed').value); $('rGo').textContent = 'Stop'; };
+  $('rGo').onclick = () => { if (replaying) { stopReplay(); return; } startReplay(replayRows, +$('rSpeed').value); };
   $('mPick').onclick = () => $('mFiles').click();
   $('mFiles').onchange = async e => { trainRows = []; for (const f of e.target.files) trainRows = trainRows.concat(await readCsv(f)); $('mTrain').disabled = !trainRows.length; $('mMsg').textContent = trainRows.length + ' readings loaded.'; };
   $('mTrain').onclick = () => {
@@ -386,7 +392,7 @@
   };
   if (S.model) { $('mHdr').disabled = false; $('mJson').disabled = false; $('mMsg').textContent = 'Saved model: ' + S.model.labels.join(', '); }
   $('mHdr').onclick = () => dl('model.h', Core.header(S.model, S.model.base), 'text/plain');
-  $('mJson').onclick = () => dl('flowsense-model.json', JSON.stringify(S.model), 'application/json');
+  $('mJson').onclick = () => dl('flowbeacon-model.json', JSON.stringify(S.model), 'application/json');
 
   function inQuiet() {
     const q = S.quiet;
@@ -404,8 +410,8 @@
   window.notifyLevel = (r, s) => {
     if (S.notify === false || r.lvl < 2 || (inQuiet() && r.lvl < 3)) return;
     try {
-      const n = new Notification('FlowSense: ' + tr(s.n), { body: (window.curNodeName ? window.curNodeName + ' · ' : '') + tr(r.cause) });
-      n.onclick = () => { if (FSB.focus) FSB.focus(); };
+      const n = new Notification('FlowBeacon: ' + tr(s.n), { body: (window.curNodeName ? window.curNodeName + ' · ' : '') + tr(r.cause) });
+      n.onclick = () => { if (FB.focus) FB.focus(); };
     } catch (e) { logErr(e); }
   };
 
@@ -450,11 +456,11 @@
   dr.onpointerup = () => {
     if (!ph.drag) return;
     ph.drag = false; dr.style.cursor = 'grab';
-    if (!ph.moved) { dripFlash('happy', 1400, GREET[Math.floor(Math.random() * GREET.length)]); ph.sq = 0.8; kick(); return; }
+    if (!ph.moved) { if (window.dripClick) dripClick(); ph.sq = 0.9; kick(); return; }
     const a = ph.pts[0], b = ph.pts[ph.pts.length - 1], dt = Math.max(0.016, (b.t - a.t) / 1000);
     if (S.calm) { ph.vx = ph.vy = 0; return; }
     ph.vx = clamp((b.x - a.x) / dt, -2500, 2500); ph.vy = clamp((b.y - a.y) / dt, -2500, 2500);
-    dripSay('Wheee!'); kick();
+    kick();
   };
   dr.oncontextmenu = e => {
     e.preventDefault(); toAbs();
@@ -471,8 +477,10 @@
     if (S.calm || Math.abs(v) < st * 3) return;
     const lim = (mx - mn) * 3;
     FL.push({ el, k, x: S.cfg[k], v: clamp(v, -lim, lim) });
+    knobSpin();
     kick();
   };
+  window.flingStop = el => { for (let i = FL.length - 1; i >= 0; i--) if (FL[i].el === el) FL.splice(i, 1); };
   const W = { y: 167, amp: 0, ph: 0 };
   function paintWater() {
     const wt = $('water');
@@ -480,6 +488,9 @@
     let d = 'M23 168 L23 ' + W.y.toFixed(1);
     for (let i = 0; i <= 12; i++) d += ' L' + (23 + i * 114 / 12).toFixed(1) + ' ' + (W.y + W.amp * Math.sin(W.ph + i * 0.9)).toFixed(2);
     wt.setAttribute('d', d + ' L137 168 Z');
+    const sf = $('surf'), bm = $('beam');
+    if (sf) { let l = ''; for (let i = 0; i <= 12; i++) l += (i ? ' L' : 'M') + (23 + i * 114 / 12).toFixed(1) + ' ' + (W.y + W.amp * Math.sin(W.ph + i * 0.9)).toFixed(2); sf.setAttribute('d', l); }
+    if (bm) { const sp = 6 + Math.max(0, (W.y - 48)) * 0.16; bm.setAttribute('points', '70,48 90,48 ' + (90 + sp).toFixed(1) + ',' + W.y.toFixed(1) + ' ' + (70 - sp).toFixed(1) + ',' + W.y.toFixed(1)); }
   }
   window.setWater = p => {
     const y = 167 - p * 134;
@@ -539,7 +550,7 @@
   }
   setInterval(() => { if (prevRain) kick(); }, 1000);
 
-  window.__nodes = { NR, selectNode, allNodes, get active() { return active; } };
+  window.__nodes = { NR, selectNode, allNodes, TINT, THEMES, get active() { return active; } };
   applyTheme();
   applyCalm();
   applyLang();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><title>FlowSense setup</title>
+<html lang="en"><head><meta charset="utf-8"><title>FlowBeacon setup</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'">
 <style>
 @font-face{font-family:"JetBrains Mono";font-weight:400;src:url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2")}
@@ -29,7 +29,7 @@ button.main{background:var(--ac);color:#fff}button:disabled{opacity:.45;cursor:d
 @keyframes sp{to{transform:rotate(360deg)}}
 </style></head>
 <body>
-<div class="head"><img src="img/drip-full.png" alt="Drip"><div><h1>First-time setup</h1><div class="sub">Everything FlowSense needs is already inside the app. This check makes sure your computer lets it talk to the ESP32-S3.</div></div></div>
+<div class="head"><img src="img/drip-full.png" alt="Drip"><div><h1>First-time setup</h1><div class="sub">Everything FlowBeacon needs is already inside the app. This check makes sure your computer lets it talk to the ESP32-S3.</div></div></div>
 <div class="card">
   <ul class="steps" id="steps"></ul>
   <div class="bar"><i id="pg"></i></div>
@@ -43,15 +43,15 @@ button.main{background:var(--ac);color:#fff}button:disabled{opacity:.45;cursor:d
 </div>
 <script>
 const $=id=>document.getElementById(id);let n=0;
-window.flowsense.onStep(d=>{let li=$('s-'+d.id);if(!li){li=document.createElement('li');li.id='s-'+d.id;li.innerHTML='<span class="ic"></span><div><div class="lbl"></div><div class="txt"></div></div>';$('steps').appendChild(li);n++}
+window.flowbeacon.onStep(d=>{let li=$('s-'+d.id);if(!li){li=document.createElement('li');li.id='s-'+d.id;li.innerHTML='<span class="ic"></span><div><div class="lbl"></div><div class="txt"></div></div>';$('steps').appendChild(li);n++}
   li.className=d.state;li.querySelector(d.state==='run'?'.lbl':'.txt').textContent=d.text;if(d.state==='run')li.querySelector('.txt').textContent='';
   if(d.state!=='run'){li.querySelector('.lbl').textContent=({sys:'Computer',app:'App files',ports:'Serial devices',perm:'Serial access',drv:'USB drivers',final:'Done'})[d.id]||d.id;$('pg').style.width=Math.min(100,n*100/(window._total||5))+'%'}});
 window._total=document.documentElement.dataset.total||5;
-window.flowsense.runSetup().then(r=>{$('pg').style.width='100%';$('bDone').disabled=false;
+window.flowbeacon.runSetup().then(r=>{$('pg').style.width='100%';$('bDone').disabled=false;
   if(r.needsGroup){$('bGrant').classList.remove('hide');$('note').textContent='Press Allow serial access, enter your password, then log out and back in once.'}
   if(r.driverIssues.length){$('bCp').classList.remove('hide');$('bCh').classList.remove('hide');$('note').textContent='Install the driver that matches your board (the chip is printed on the USB bridge). These pages need internet.'}
   if(!r.needsGroup&&!r.driverIssues.length)$('note').textContent='All good. You are ready to connect your board.'});
-$('bGrant').onclick=async()=>{$('bGrant').disabled=true;const g=await window.flowsense.grantSerial();$('note').textContent=g.ok?'Done. Log out and back in so Linux applies it.':'Could not change it: '+g.error;$('bGrant').disabled=false};
-$('bCp').onclick=()=>window.flowsense.openLink('cp210x');$('bCh').onclick=()=>window.flowsense.openLink('ch340');
-$('bDone').onclick=()=>window.flowsense.finish();
+$('bGrant').onclick=async()=>{$('bGrant').disabled=true;const g=await window.flowbeacon.grantSerial();$('note').textContent=g.ok?'Done. Log out and back in so Linux applies it.':'Could not change it: '+g.error;$('bGrant').disabled=false};
+$('bCp').onclick=()=>window.flowbeacon.openLink('cp210x');$('bCh').onclick=()=>window.flowbeacon.openLink('ch340');
+$('bDone').onclick=()=>window.flowbeacon.finish();
 </script></body></html>

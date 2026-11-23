@@ -1,0 +1,46 @@
+/* Phone / small-tablet layout (also used by the Android app). Desktop is untouched. */
+@media (max-width:720px){
+  html{-webkit-text-size-adjust:100%}
+  body{padding:0 10px calc(4px + env(safe-area-inset-bottom));padding-top:env(safe-area-inset-top)}
+  header{margin:0 -10px 8px;padding:8px 12px;gap:8px}
+  header img{height:34px!important}header h1{font-size:1.05rem}header .sub{display:none}
+  header{flex-wrap:wrap;justify-content:space-between}header>.row{flex:none}header #conn{display:inline-flex;font-size:.6rem;white-space:nowrap}
+  .rolechip{margin:0;padding:6px 10px;font-size:.62rem}
+  /* toolbar: one scrolling row instead of five wrapped lines */
+  nav.toolbar{padding:8px 10px;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:8px}
+  nav.toolbar::-webkit-scrollbar{display:none}
+  nav.toolbar .tg{flex-wrap:nowrap;flex:none;gap:8px;align-items:center}
+  nav.toolbar button{padding:8px 12px;font-size:.72rem;white-space:nowrap;min-height:40px}
+  nav.toolbar .tb-ico::before{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+  nav.toolbar .tsep{display:none}nav.toolbar #vol{width:70px}
+  #pages{padding:2px 2px 10px}
+  .card{padding:14px;border-radius:18px}
+  .pg[data-pg=overview]{grid-template-columns:1fr}
+  h2{font-size:.72rem}
+  .row{flex-wrap:wrap}#swatches,.swatches{flex-wrap:wrap}
+  input[type=text],input[type=password],input[type=number],select{min-height:40px;font-size:16px}
+  table{font-size:.72rem}
+  .scroll,.dm-scroll{overflow-x:auto}
+  /* section buttons become a bottom navigation bar */
+  #tabs{order:20;margin:0 -10px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:4px;border-top:1px solid color-mix(in srgb,var(--mu) 25%,transparent);background:var(--bg);position:relative;z-index:20}
+  #tabs .tab{flex-direction:column;justify-content:center;gap:3px;min-width:66px;padding:6px 8px;font-size:.6rem;border-radius:14px;box-shadow:none;background:none}
+  #tabs .tab::before{width:22px;height:22px;margin:0}
+  #tabs .tab.on{box-shadow:inset 2px 2px 5px var(--sd),inset -2px -2px 5px var(--sl)}
+  #ban{order:0}
+  /* Drip: smaller and clear of the bottom bar */
+  #drip{width:78px;right:6px;bottom:calc(74px + env(safe-area-inset-bottom))}
+  #dw,#dbody{width:78px}#drip::after{width:48px;height:8px;margin-top:4px}
+  #bub{font-size:.66rem;max-width:150px;padding:6px 10px}
+  /* city map */
+  .dm-stats{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+  .dm-stats .card{padding:8px 6px;text-align:center;border-radius:14px}.dm-stats .stat{font-size:1.2rem;margin:2px 0 0}.dm-stats .sub{display:none}
+  .dm-stats .k label{font-size:.5rem;letter-spacing:0;display:block;line-height:1.2}.dm-stats .k label::before{display:block;margin:0 auto 2px;width:20px;height:20px}
+  .dm-filters{padding:8px 10px;gap:8px;margin-bottom:10px}.dm-legend{font-size:.6rem;gap:2px 10px}.dm-filters label{font-size:.58rem;margin-bottom:2px}.dm-filters select{padding:4px 8px;min-height:34px;font-size:14px}.dm-filters>div:not(.dm-legend){min-width:100px}
+  #dmMap{height:clamp(260px,calc(100dvh - 330px),560px)!important}
+  .dm-side{max-height:none}.dm-main{gap:12px}
+  #dmSub{width:100%}#dmSub button{flex:1}
+  .seg{flex-wrap:wrap}
+  svg.drain{max-width:100%;height:auto}
+  .role-box{padding:20px 16px}.role-grid{gap:10px}.role-card{flex-direction:row;align-items:center;flex-wrap:wrap;padding:12px}.role-card::before{width:34px;height:34px}.role-card b{flex:1}.role-card span{flex-basis:100%}
+}
+@media (max-width:720px) and (max-height:520px){#drip{display:none}}

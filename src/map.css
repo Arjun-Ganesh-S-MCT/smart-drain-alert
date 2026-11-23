@@ -1,0 +1,55 @@
+/* City drainage map (corporation officials). Reuses the app's neumorphic tokens. */
+#mapView[hidden],#dmLock[hidden],#dmDispatch[hidden]{display:none!important}
+.dm-stats{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:24px}
+.dm-filters{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:24px;padding:16px 20px}
+.dm-filters>div:not(.dm-legend){min-width:160px;flex:1}
+.dm-filters label{margin-bottom:6px}
+.dm-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.75rem;color:var(--mu);flex:2 1 320px}
+.dm-legend span{display:inline-flex;align-items:center}
+.dm-main{display:grid;gap:24px;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);margin-bottom:24px}
+@media (max-width:1000px){.dm-main{grid-template-columns:1fr}}
+.dm-mapcard{padding:14px}
+#dmMap{height:560px;border-radius:18px;overflow:hidden;position:relative;z-index:0}
+#dmMapMsg{margin-top:8px;min-height:1.2em}
+.dm-side{align-self:start;max-height:640px;overflow:auto}
+.dm-scroll{max-height:340px;overflow:auto}
+#dmTable tr.dm-row{cursor:pointer}#dmTable tr.dm-row:hover td,#dmTable tr.dm-row.on td{color:var(--ac)}
+#dmTable td,#dmTable th{vertical-align:top}
+.dm-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;box-shadow:inset 2px 2px 3px rgba(0,0,0,.25)}
+.dm-s-normal{--dc:#22b573}.dm-s-possible{--dc:#e6b800}.dm-s-blockage{--dc:#e5383b}.dm-s-overflow{--dc:#2f7de1}.dm-s-offline{--dc:#8a8a8a}
+.dm-dot{background:var(--dc)}
+.dm-pin{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--dc);color:#fff;font:700 14px/1 sans-serif;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);position:relative}
+.dm-pin.dm-crit::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px solid var(--dc);animation:dm-pulse 1.4s ease-out infinite}
+.dm-pin.dm-sel{outline:3px solid #222;outline-offset:2px}
+@keyframes dm-pulse{from{transform:scale(.6);opacity:.9}to{transform:scale(1.15);opacity:0}}
+@media (prefers-reduced-motion:reduce){.dm-pin.dm-crit::after{animation:none}}
+.dm-badge{display:inline-block;padding:2px 10px;border-radius:99px;color:#fff;font-size:.74rem;font-weight:700;background:var(--dc)}
+.dm-pop{font-family:"JetBrains Mono","Cascadia Mono",Consolas,monospace;font-size:12px;line-height:1.55;color:#333;min-width:200px}
+.dm-pop b{font-size:13px}.dm-pop table{border-collapse:collapse;width:100%}.dm-pop td{padding:1px 0}.dm-pop td:first-child{color:#777;padding-right:10px}
+.dm-kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0;font-size:.82rem}.dm-kv span:nth-child(odd){color:var(--mu)}
+.dm-team{display:inline-block;margin:0 6px 6px 0;padding:3px 10px;border-radius:99px}
+.dm-team button{padding:0 0 0 8px;box-shadow:none;background:none;font-size:.8rem}
+.leaflet-container{font-family:inherit}
+
+/* ---- icon set (light / dark variants follow the app theme) ---- */
+:root{--i-map:url(icons/light/map.png);--i-back:url(icons/light/back.png);--i-demo:url(icons/light/demo.png);--i-baseline:url(icons/light/baseline.png);--i-calibration:url(icons/light/calibration.png);--i-connect:url(icons/light/connect.png);--i-devices:url(icons/light/devices.png);--i-normal:url(icons/light/normal.png);--i-blockage:url(icons/light/blockage.png);--i-resolved:url(icons/light/resolved.png);--i-ward:url(icons/light/ward.png);--i-zone:url(icons/light/zone.png);--i-status:url(icons/light/status.png);--i-team:url(icons/light/team.png);--i-assign:url(icons/light/assign.png);--i-work:url(icons/light/work.png);--i-done:url(icons/light/done.png);--i-lock:url(icons/light/lock.png);--i-update:url(icons/light/update.png);--p-normal:url(icons/light/pin-normal.png);--d-normal:url(icons/light/dot-normal.png);--p-possible:url(icons/light/pin-possible.png);--d-possible:url(icons/light/dot-possible.png);--p-blockage:url(icons/light/pin-blockage.png);--d-blockage:url(icons/light/dot-blockage.png);--p-overflow:url(icons/light/pin-overflow.png);--d-overflow:url(icons/light/dot-overflow.png);--p-offline:url(icons/light/pin-offline.png);--d-offline:url(icons/light/dot-offline.png);}
+:root.dark{--i-map:url(icons/dark/map.png);--i-back:url(icons/dark/back.png);--i-demo:url(icons/dark/demo.png);--i-baseline:url(icons/dark/baseline.png);--i-calibration:url(icons/dark/calibration.png);--i-connect:url(icons/dark/connect.png);--i-devices:url(icons/dark/devices.png);--i-normal:url(icons/dark/normal.png);--i-blockage:url(icons/dark/blockage.png);--i-resolved:url(icons/dark/resolved.png);--i-ward:url(icons/dark/ward.png);--i-zone:url(icons/dark/zone.png);--i-status:url(icons/dark/status.png);--i-team:url(icons/dark/team.png);--i-assign:url(icons/dark/assign.png);--i-work:url(icons/dark/work.png);--i-done:url(icons/dark/done.png);--i-lock:url(icons/dark/lock.png);--i-update:url(icons/dark/update.png);--p-normal:url(icons/dark/pin-normal.png);--d-normal:url(icons/dark/dot-normal.png);--p-possible:url(icons/dark/pin-possible.png);--d-possible:url(icons/dark/dot-possible.png);--p-blockage:url(icons/dark/pin-blockage.png);--d-blockage:url(icons/dark/dot-blockage.png);--p-overflow:url(icons/dark/pin-overflow.png);--d-overflow:url(icons/dark/dot-overflow.png);--p-offline:url(icons/dark/pin-offline.png);--d-offline:url(icons/dark/dot-offline.png);}
+.dm-ico::before,.tb-ico::before{content:"";display:inline-block;flex:none;width:20px;height:20px;margin-right:8px;vertical-align:-5px;background:var(--ic) center/contain no-repeat}
+button.tb-ico{display:inline-flex;align-items:center}
+#bConn{--ic:var(--i-connect)}#bDemo{--ic:var(--i-demo)}#bCal{--ic:var(--i-baseline)}#bWiz{--ic:var(--i-calibration)}
+#bMapNav{--ic:var(--i-map)}#bMapNav[aria-pressed=true]{--ic:var(--i-back)}
+#dmAssign{--ic:var(--i-assign)}#dmStart{--ic:var(--i-work)}#dmDone{--ic:var(--i-done)}
+label[for=dmWard]{--ic:var(--i-ward)}label[for=dmZone]{--ic:var(--i-zone)}label[for=dmStat]{--ic:var(--i-status)}
+label[for=dmTeam]{--ic:var(--i-team)}label[for=dmPinNew],#dmLock h2{--ic:var(--i-lock)}
+.dm-stats .k label::before{width:26px;height:26px;border-radius:0;box-shadow:none;margin-right:10px;vertical-align:-8px;background:var(--ic) center/contain no-repeat}
+.dm-stats .c1 label{--ic:var(--i-devices)}.dm-stats .c2 label{--ic:var(--i-normal)}.dm-stats .c3 label{--ic:var(--i-blockage)}.dm-stats .c4 label{--ic:var(--i-resolved)}
+#fbUp b::before{content:"";display:inline-block;width:22px;height:22px;margin-right:8px;vertical-align:-6px;background:var(--i-update) center/contain no-repeat}
+/* map markers and legend now use the pin artwork */
+.dm-pin{width:38px;height:48px;border:0;border-radius:0;box-shadow:none;background:var(--pin) center bottom/contain no-repeat;font-size:0}
+.dm-pin::after{display:none}
+.dm-pin.dm-crit{animation:dm-glow 1.4s ease-in-out infinite}
+@keyframes dm-glow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 7px var(--dc))}}
+@media (prefers-reduced-motion:reduce){.dm-pin.dm-crit{animation:none}}
+.dm-pin.dm-sel{outline:0;filter:drop-shadow(0 0 0 2px #222) drop-shadow(0 0 5px #222);transform:scale(1.18);transform-origin:50% 100%}
+.dm-s-normal{--pin:var(--p-normal);--dot:var(--d-normal)}.dm-s-possible{--pin:var(--p-possible);--dot:var(--d-possible)}.dm-s-blockage{--pin:var(--p-blockage);--dot:var(--d-blockage)}.dm-s-overflow{--pin:var(--p-overflow);--dot:var(--d-overflow)}.dm-s-offline{--pin:var(--p-offline);--dot:var(--d-offline)}
+.dm-dot{width:18px;height:18px;border-radius:0;box-shadow:none;background:var(--dot) center/contain no-repeat;vertical-align:-4px}

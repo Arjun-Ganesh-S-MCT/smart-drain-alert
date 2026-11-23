@@ -1,0 +1,19 @@
+{
+  "name": "flowbeacon-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Android wrapper (Capacitor) for FlowBeacon",
+  "scripts": {
+    "prepare-web": "node prepare-web.js",
+    "add": "cap add android",
+    "sync": "node prepare-web.js && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/core": "^6.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.0"
+  }
+}

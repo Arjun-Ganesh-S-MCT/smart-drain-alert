@@ -2,3 +2,11 @@ node_modules/
 dist/
 signed-*/
 src/fonts/
+src/vendor/
+android-app/node_modules/
+android-app/www/
+android-app/android/
+__pycache__/
+*.pyc
+__pycache__/
+*.pyc
