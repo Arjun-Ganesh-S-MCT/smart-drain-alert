@@ -4,6 +4,12 @@
 
 Developed by **TechMinds**
 
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue?style=for-the-badge&logo=linux&logoColor=white)
+![Hardware](https://img.shields.io/badge/Hardware-ESP32--S3-orange?style=for-the-badge&logo=espressif&logoColor=white)
+![Framework](https://img.shields.io/badge/Framework-Electron-47848F?style=for-the-badge&logo=electron&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Prototype-yellow?style=for-the-badge)
+
 FlowBeacon is an Electron-based desktop application that monitors drainage conditions using an ESP32-S3 prototype. It analyses sensor readings, detects abnormal conditions and alerts operators about potential blockages and overflow risks.
 
 ## Features
@@ -28,8 +34,6 @@ FlowBeacon is an Electron-based desktop application that monitors drainage condi
 ## Installation
 
 Download the latest version from [GitHub Releases](https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert/releases).
-
-Select the package for your operating system and follow the installation instructions.
 
 ## Run from Source
 
@@ -76,7 +80,8 @@ Communication is supported through USB Serial and Wi-Fi.
 
 ## Project
 
-**Developed by:** TechMinds  
+**Developed by:** TechMinds
+
 **Repository:** [GitHub – FlowBeacon](https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)
 
 ## License
