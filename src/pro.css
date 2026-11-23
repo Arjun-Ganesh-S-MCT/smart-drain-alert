@@ -1,0 +1,124 @@
+/* Professional polish layer: loaded last, only refines the existing look (same themes, same components). */
+:root{--rad:18px;--gap:22px}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{max-width:1380px;margin:0 auto;padding:0 28px 40px;font-size:13.5px;line-height:1.5;letter-spacing:.005em}
+/* top app bar */
+header{position:sticky;top:0;z-index:30;margin:0 -28px 18px;padding:14px 28px;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 1px 0 color-mix(in srgb,var(--sd) 70%,transparent),0 8px 18px -14px var(--sd)}
+header h1{font-size:1.15rem;letter-spacing:.01em}
+header .sub{letter-spacing:.02em}
+#conn{padding:7px 14px;border-radius:99px;box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl);font-size:.78rem;font-weight:600}
+/* surfaces */
+.raised{border-radius:var(--rad);box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl)}
+.inset{border-radius:12px}
+.card{padding:22px 24px}
+.grid,.wide,.dm-stats{gap:var(--gap);margin-bottom:var(--gap)}
+.toolbar{border-radius:var(--rad);padding:12px 18px;gap:10px 24px;margin-bottom:var(--gap)}
+/* section headings: small caps label with an accent tick */
+h2{display:flex;align-items:center;gap:10px;font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mu);margin:0 0 16px}
+h2::before{content:"";width:4px;height:14px;border-radius:4px;background:var(--ac);flex:none}
+.card>h2:first-child,.card .row>h2{margin-bottom:0}
+.card>.row:first-child{margin-bottom:16px!important}
+/* KPI tiles */
+.stat{font-size:2.15rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:8px 0 4px;line-height:1.1}
+.unit{font-size:.78rem;letter-spacing:.04em;font-weight:500}
+.grid>.card{position:relative;overflow:hidden}
+.grid>.card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--ac),transparent 70%);opacity:.7}
+.k label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.k label::before{width:8px;height:8px;box-shadow:none}
+.sub{font-size:.78rem}
+/* status banner card */
+.cond{font-size:1.6rem;letter-spacing:-.01em}
+.orb{width:92px;height:92px}
+.pill{font-weight:600;letter-spacing:.02em;padding:5px 13px}
+/* buttons and inputs */
+button{padding:9px 18px;font-size:.82rem;font-weight:600;letter-spacing:.015em;box-shadow:4px 4px 9px var(--sd),-4px -4px 9px var(--sl)}
+button:hover{transform:translateY(-1px)}
+button:active,button.on{transform:none}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+#bConn,#bConn:hover{box-shadow:0 6px 16px -6px var(--ac),3px 3px 7px var(--sd)}
+.toolbar button{min-height:40px}
+.seg{padding:4px}.seg button{padding:7px 14px;font-size:.78rem}
+input[type=number],input[type=text],input[type=password],select{padding:10px 14px;font-size:.84rem;min-height:40px}
+input::placeholder{color:var(--mu);opacity:.75}
+label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+.sw+*,.sw{vertical-align:middle}
+/* tables, logs */
+table.h,#dmTable{font-size:.78rem}
+table.h th,#dmTable th{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:8px 10px;position:sticky;top:0;background:var(--bg)}
+table.h td,#dmTable td{padding:9px 10px;border-top:1px solid color-mix(in srgb,var(--sd) 55%,transparent)}
+#dmTable tr.dm-row:hover td{background:color-mix(in srgb,var(--ac) 8%,transparent)}
+.inc{border-radius:12px;padding:12px 16px}
+.log{gap:10px}
+/* canvases and diagram frame */
+canvas{height:200px}
+.inset:has(>svg.drain){padding:0!important;overflow:hidden;border-radius:14px}
+svg.drain{display:block;border-radius:14px}
+svg.drain text{fill:#fff;font-size:9.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;paint-order:stroke;stroke:#000a;stroke-width:3px;stroke-linejoin:round}
+.sonar path{opacity:0;animation:sonar 1.8s ease-out infinite}.sonar path:nth-child(2){animation-delay:.25s}.sonar path:nth-child(3){animation-delay:.5s}
+@keyframes sonar{0%{opacity:0;transform:translateY(-4px)}30%{opacity:.9}100%{opacity:0;transform:translateY(8px)}}
+.led{animation:led 1.6s ease-in-out infinite}@keyframes led{50%{opacity:.25}}
+.bub circle{animation:rise 4s ease-in infinite}.bub circle:nth-child(2){animation-delay:-1.4s}.bub circle:nth-child(3){animation-delay:-2.6s}
+@keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:.5}100%{transform:translateY(-70px);opacity:0}}
+#rainp.wet .wetline{opacity:1;animation:led 1s infinite}
+#debris{filter:drop-shadow(0 2px 3px #0008)}
+html.calm .sonar path,html.calm .led,html.calm .bub circle{animation:none!important}
+@media (prefers-reduced-motion:reduce){.sonar path,.led,.bub circle{animation:none}}
+/* map view */
+.dm-filters{padding:16px 22px}
+.dm-stats .card{padding:18px 22px}
+.dm-side h2{margin-bottom:14px}
+/* scrollbars */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--mu) 55%,transparent) transparent}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--mu) 50%,transparent);border-radius:9px}::-webkit-scrollbar-track{background:transparent}
+::selection{background:color-mix(in srgb,var(--ac) 35%,transparent)}
+/* Drip extras */
+.dpart{position:fixed;z-index:14;pointer-events:none;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(circle at 35% 30%,#d8f1ff,#4fa8e0);box-shadow:0 0 6px #4fa8e066}
+.a-dance{animation:d-dance .7s ease-in-out infinite}.a-stretch{animation:d-stretch 1.6s ease-in-out infinite}.a-wiggle{animation:d-wiggle .22s ease-in-out infinite}.a-sway{animation:d-sway2 1.4s ease-in-out infinite}
+@keyframes d-dance{0%,100%{transform:translate(-6px,0) rotate(-7deg)}25%{transform:translate(0,-16px) rotate(0)}50%{transform:translate(6px,0) rotate(7deg)}75%{transform:translate(0,-16px) rotate(0)}}
+@keyframes d-stretch{0%,100%{transform:scale(1,1)}45%{transform:scale(.92,1.12) translateY(-6px)}70%{transform:scale(1.06,.94)}}
+@keyframes d-wiggle{0%,100%{transform:rotate(-4deg) scale(1.02)}50%{transform:rotate(4deg) scale(.98)}}
+@keyframes d-sway2{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-5px)}}
+#bub{font-weight:600;box-shadow:4px 4px 10px var(--sd),-3px -3px 8px var(--sl)}
+@media (max-width:760px){body{padding:0 14px 30px}header{margin:0 -14px 14px;padding:12px 14px}.card{padding:18px}}
+/* ---- tabbed layout: the window fits the screen, content scrolls only inside a tall tab ---- */
+html,body{height:100%}
+body{display:flex;flex-direction:column;overflow:hidden}
+header,nav.toolbar,#tabs,#ban{flex:none}
+header{position:relative}
+#bMapNav{display:none}
+#tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 6px 14px;margin:0 -6px;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+#tabs .tab{display:inline-flex;align-items:center;flex:none;padding:9px 16px;border-radius:99px;white-space:nowrap}
+#tabs .tab::before{content:"";width:18px;height:18px;margin-right:8px;background:var(--ic) center/contain no-repeat;opacity:.85}
+#tabs .tab.on{color:var(--ac);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl);transform:none}
+#tabs .tab.on::before{opacity:1}
+#pages{flex:1;min-height:0;overflow:auto;padding:6px 8px 28px;margin:0 -8px}
+.pg[hidden]{display:none!important}
+.pg>*:last-child{margin-bottom:0}
+#dmMap{height:clamp(340px,56vh,620px)}
+.dm-side{max-height:clamp(340px,60vh,660px)}
+@media print{html,body{height:auto}body{display:block;overflow:visible}}
+/* compact chrome so more of each tab fits */
+header{padding:8px 28px;margin-bottom:8px}
+header img,header .logo{max-height:46px}
+.toolbar{padding:10px 16px;margin-bottom:12px}
+#tabs{gap:6px;padding:2px 6px 12px}
+#tabs .tab{padding:8px 12px;font-size:.78rem}
+#tabs .tab::before{width:16px;height:16px;margin-right:6px}
+.pg[data-pg=overview]{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:var(--gap)}
+.pg[data-pg=overview]>.grid{grid-column:1/-1}
+.pg[data-pg=overview]>.card{margin-bottom:0;align-self:stretch}
+@media (max-width:1000px){.pg[data-pg=overview]{grid-template-columns:1fr}}
+/* map tab: live map fits one screen, incident log and setup on a second view */
+#dmSub{display:inline-flex;margin-bottom:14px}
+#dmBody[data-v=map]>.wide{display:none}
+#dmBody[data-v=log]>.dm-main,#dmBody[data-v=log]>.dm-filters{display:none}
+.dm-stats{gap:14px;margin-bottom:14px}.dm-stats .card{padding:12px 18px}.dm-stats .stat{font-size:1.7rem;margin:4px 0 2px}
+.dm-filters{margin-bottom:14px;padding:12px 18px}
+.dm-main{margin-bottom:0}
+#dmMap{height:clamp(300px,calc(100vh - 480px),640px)}
+.dm-side{max-height:clamp(300px,calc(100vh - 440px),660px)}
+#dmMap{height:clamp(240px,calc(100vh - 645px),680px)}
+.dm-side{max-height:clamp(240px,calc(100vh - 605px),700px)}
+.dm-stats .sub:not(#dmScope){display:none}
+#dmSub{margin-bottom:10px}

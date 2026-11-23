@@ -26,6 +26,7 @@ WebSocketsServer ws(81);
 volatile uint32_t pulses = 0;
 bool wsOn = false;
 bool wifiPending = false;
+bool wifiFromApp = false;
 uint32_t wifiStart = 0;
 uint32_t intervalMs = 1000;
 uint32_t lastMs = 0;
@@ -110,6 +111,7 @@ void handleLine(String line) {
     WiFi.disconnect();
     WiFi.begin(d["ssid"].as<const char*>(), d["pass"].as<const char*>());
     wifiPending = true;
+    wifiFromApp = true;
     wifiStart = millis();
   }
 }
@@ -144,7 +146,8 @@ void loop() {
       Serial.printf("{\"ip\":\"%s\"}\n", WiFi.localIP().toString().c_str());
     } else if (millis() - wifiStart > 20000) {
       wifiPending = false;
-      Serial.println("{\"wifi\":\"failed\"}");
+      if (wifiFromApp) Serial.println("{\"wifi\":\"failed\"}");
+      wifiFromApp = false;
     }
   }
   if (wsOn) ws.loop();

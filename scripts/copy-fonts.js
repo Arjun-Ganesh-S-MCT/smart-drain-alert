@@ -15,3 +15,16 @@ try {
 } catch (e) {
   console.warn('Font copy skipped:', e.message);
 }
+
+// Leaflet (city drainage map): copy the browser build next to the app so it works offline-installed
+try {
+  const lf = path.join(__dirname, '..', 'node_modules', 'leaflet', 'dist');
+  const lt = path.join(__dirname, '..', 'src', 'vendor', 'leaflet');
+  if (fs.existsSync(lf)) {
+    fs.mkdirSync(path.join(lt, 'images'), { recursive: true });
+    for (const f of ['leaflet.js', 'leaflet.css']) fs.copyFileSync(path.join(lf, f), path.join(lt, f));
+    for (const f of fs.readdirSync(path.join(lf, 'images'))) fs.copyFileSync(path.join(lf, 'images', f), path.join(lt, 'images', f));
+  } else console.warn('Leaflet not found: run npm install');
+} catch (e) {
+  console.warn('Leaflet copy skipped:', e.message);
+}
