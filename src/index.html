@@ -46,8 +46,8 @@ canvas{width:100%;height:190px;display:block}
 .set{display:flex;flex-wrap:wrap;gap:34px;justify-content:space-around;padding:10px 0}
 .dialw{display:flex;flex-direction:column;align-items:center;gap:8px;width:150px;text-align:center}
 .dial{width:130px;height:130px;border-radius:50%;position:relative;background:var(--bg);box-shadow:8px 8px 16px var(--sd),-8px -8px 16px var(--sl);touch-action:none;cursor:grab;margin-bottom:6px}
-.dial::before{content:"";position:absolute;inset:26px;border-radius:50%;box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
-.dial svg{position:absolute;inset:0;width:100%;height:100%}
+.dial::before{content:"";position:absolute;top:26px;right:26px;bottom:26px;left:26px;border-radius:50%;box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
+.dial svg{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%}
 .knob{position:absolute;inset:34px;border-radius:50%;background:var(--bg);box-shadow:5px 5px 10px var(--sd),-5px -5px 10px var(--sl);transform:rotate(var(--a,0deg))}
 .knob i{position:absolute;top:7px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--ac)}
 .dv{font-weight:700;font-size:1.05rem}
@@ -58,7 +58,7 @@ canvas{width:100%;height:190px;display:block}
 svg text{fill:var(--mu);font-size:11px;font-family:inherit}
 .pipe{stroke-dasharray:10 8;animation:fw linear infinite;animation-duration:var(--sp,0s);animation-play-state:var(--ps,paused)}
 @keyframes fw{to{stroke-dashoffset:-36}}
-.sw{position:relative;width:54px;height:28px;display:inline-block}.sw input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.sw{position:relative;width:54px;height:28px;display:inline-block}.sw input{opacity:0;position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
 .sw i{position:absolute;inset:0;border-radius:99px;background:var(--bg);box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl);transition:background .15s}
 .sw i::after{content:"";position:absolute;top:3px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--bg);box-shadow:3px 3px 6px var(--sd),-2px -2px 5px var(--sl);transition:left .35s cubic-bezier(.34,1.8,.64,1)}
 .sw input:checked+i{background:var(--ac)}.sw input:checked+i::after{left:28px}.sw input:focus-visible+i{outline:2px solid var(--ac);outline-offset:3px}
@@ -69,9 +69,9 @@ select{appearance:none;-webkit-appearance:none;border-radius:99px;padding-right:
 .seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:99px}.seg button{box-shadow:none;background:transparent;padding:8px 16px}
 .seg button.on{background:var(--ac);color:var(--on);box-shadow:3px 3px 6px var(--sd),-3px -3px 6px var(--sl)}
 details{font-size:.82rem;color:var(--mu);margin-top:12px}details p{line-height:1.6}
-#drip{position:fixed;right:22px;bottom:16px;width:150px;z-index:15;touch-action:none;cursor:grab;user-select:none}
+#drip{position:fixed;right:22px;bottom:16px;width:150px;z-index:25;touch-action:none;cursor:grab;user-select:none}
 #drip::after{content:"";display:block;width:92px;height:12px;margin:8px auto 0;border-radius:50%;background:var(--sd);opacity:.55;filter:blur(4px)}
-#dw{width:150px}#dbody{position:relative;width:150px;aspect-ratio:174/216}
+#dw{width:150px}#dbody{position:relative;width:150px;height:186px;aspect-ratio:174/216}
 .dp{position:absolute;pointer-events:none;z-index:3;-webkit-user-drag:none}
 .dp.arm{z-index:0}.dp.m{transform:scaleX(-1)}
 .dp.aw{transform-origin:12% 88%;animation:d-wave .45s ease-in-out infinite alternate}
@@ -126,6 +126,7 @@ header{align-items:center;justify-content:space-between;gap:14px;margin-bottom:1
 <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
+<script src="intro.js"></script>
 <header>
   <div class="row" style="gap:16px;flex-wrap:nowrap"><img src="img/techminds.png" alt="TechMinds" style="height:52px"><div><h1>FlowBeacon</h1><div class="sub">by TechMinds · drain blockage prediction · ESP32-S3 live monitor</div></div></div>
   <span id="conn" class="sub"><span class="dot"></span>Not connected</span>
@@ -406,7 +407,7 @@ $('vol').oninput=e=>{S.vol=e.target.value/100;e.target.style.setProperty('--v',e
 let hist=[],lastLvl=0,acked=false,calBuf=null,rec={on:false,rows:[]},wz={step:0,res:[],buf:null,sug:null},lastRx=0,connected=false,prevRain=0,predWarn=false,demo=null,scen='normal',tick=0;
 let AC='#fc8068',MU='#948a82',TX='#6b625b';
 const mean=(a,k)=>a.reduce((s,x)=>s+x[k],0)/a.length;
-const sd=(a,k,fl)=>{const m=mean(a,k);return Math.max(Math.sqrt(a.reduce((s,x)=>s+(x[k]-m)**2,0)/a.length),fl)};
+const sd=(a,k,fl)=>{const m=mean(a,k);return Math.max(Math.sqrt(a.reduce((s,x)=>s+Math.pow(x[k]-m,2),0)/a.length),fl)};
 function mkBase(b){S.base={flow:mean(b,'flow'),dist:mean(b,'dist'),turb:mean(b,'turb'),sf:sd(b,'flow',Math.max(.05,.05*mean(b,'flow'))),sd:sd(b,'dist',.2),st:sd(b,'turb',10)};save()}
 
 function health(d){return Core.health(d,hist,S.base)}

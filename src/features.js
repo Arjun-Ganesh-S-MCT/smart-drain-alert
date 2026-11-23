@@ -350,7 +350,7 @@
     $('rowStart').style.display = s.platform === 'win32' ? '' : 'none';
     $('aMsg').textContent = 'Version ' + s.version;
   });
-  else { $('bTray').disabled = true; $('bStart').disabled = true; }
+  else { $('bTray').closest('.row').hidden = true; $('rowStart').hidden = true; }
   $('bTray').onchange = e => sendSet({ closeToTray: e.target.checked });
   $('bStart').onchange = e => sendSet({ startWithPc: e.target.checked });
   $('bLog').onclick = () => { if (FB.openLog) FB.openLog(); };
@@ -432,6 +432,9 @@
 
   const ph = { x: 0, y: 0, vx: 0, vy: 0, drag: false, abs: false, sq: 1, sv: 0, pts: [], ox: 0, oy: 0, moved: false };
   const box = () => ({ w: dr.offsetWidth, h: dr.offsetHeight });
+  const bot = () => { const t = $('tabs'), r = t && t.getBoundingClientRect(); return r && r.height && r.top > innerHeight / 2 ? r.top : innerHeight; };
+  const syncBar = () => { const t = $('tabs'), r = t && t.getBoundingClientRect(); document.documentElement.style.setProperty('--tabh', (r && r.height && r.top > innerHeight / 2 ? Math.ceil(innerHeight - r.top) : 0) + 'px'); };
+  syncBar(); addEventListener('load', syncBar); addEventListener('resize', syncBar); addEventListener('orientationchange', () => setTimeout(syncBar, 300)); document.addEventListener('fbtabs-ready', syncBar);
   const place = () => { dr.style.left = ph.x + 'px'; dr.style.top = ph.y + 'px'; };
   function toAbs() {
     if (ph.abs) return;
@@ -447,7 +450,7 @@
   };
   dr.onpointermove = e => {
     if (!ph.drag) return;
-    const b = box(), nx = clamp(e.clientX - ph.ox, 0, innerWidth - b.w), ny = clamp(e.clientY - ph.oy, 0, innerHeight - b.h);
+    const b = box(), nx = clamp(e.clientX - ph.ox, 0, innerWidth - b.w), ny = clamp(e.clientY - ph.oy, 0, bot() - b.h);
     if (Math.hypot(nx - ph.x, ny - ph.y) > 2) ph.moved = true;
     ph.x = nx; ph.y = ny; place();
     ph.pts.push({ x: nx, y: ny, t: performance.now() });
@@ -466,10 +469,10 @@
     e.preventDefault(); toAbs();
     const b = box();
     dr.style.transition = 'left .6s cubic-bezier(.3,1.5,.5,1),top .6s cubic-bezier(.3,1.5,.5,1)';
-    ph.x = innerWidth - b.w - 22; ph.y = innerHeight - b.h - 16; ph.vx = ph.vy = 0; place();
+    ph.x = innerWidth - b.w - 22; ph.y = bot() - b.h - 16; ph.vx = ph.vy = 0; place();
     setTimeout(() => { dr.style.transition = 'none'; }, 700);
   };
-  addEventListener('resize', () => { if (!ph.abs) return; const b = box(); ph.x = clamp(ph.x, 0, innerWidth - b.w); ph.y = clamp(ph.y, 0, innerHeight - b.h); place(); });
+  addEventListener('resize', () => { if (!ph.abs) return; const b = box(); ph.x = clamp(ph.x, 0, innerWidth - b.w); ph.y = clamp(ph.y, 0, bot() - b.h); place(); });
 
   const FL = [];
   window.fling = (el, k, v) => {
@@ -513,7 +516,7 @@
     lastT = t;
     let act = false;
     if (ph.abs && !ph.drag && !S.calm) {
-      const b = box(), fl = innerHeight - b.h, wr = innerWidth - b.w;
+      const b = box(), fl = bot() - b.h, wr = innerWidth - b.w;
       ph.vy += 1900 * dt; ph.x += ph.vx * dt; ph.y += ph.vy * dt;
       if (ph.y >= fl) {
         ph.y = fl;
@@ -528,7 +531,7 @@
     }
     ph.sv += ((1 - ph.sq) * 400 - ph.sv * 18) * dt; ph.sq += ph.sv * dt;
     if (Math.abs(ph.sq - 1) > 0.003 || Math.abs(ph.sv) > 0.02) act = true; else { ph.sq = 1; ph.sv = 0; }
-    const air = ph.abs && ph.y < innerHeight - dr.offsetHeight - 1;
+    const air = ph.abs && ph.y < bot() - dr.offsetHeight - 1;
     $('dsq').style.transform = 'rotate(' + (air ? clamp(ph.vx * 0.012, -25, 25) : 0) + 'deg) scale(' + (1 / Math.sqrt(ph.sq)).toFixed(3) + ',' + ph.sq.toFixed(3) + ')';
     for (let i = FL.length - 1; i >= 0; i--) {
       const f = FL[i], [mn, mx, st] = DL[f.k];

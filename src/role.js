@@ -31,7 +31,7 @@
   function apply() {
     document.body.dataset.role = role;
     const lock = role === 'consumer';
-    ['bConn', 'bDemo', 'bCal', 'bWiz'].forEach(id => { const b = $(id); if (b) { b.hidden = lock; b.disabled = lock; } });
+    ['bConn', 'bDemo', 'bCal', 'bWiz'].forEach(id => { const b = $(id); if (b) b.hidden = lock; });
     const seg = document.querySelector('.seg [data-s]'), nn = $('nname');
     [seg && seg.closest('.seg') && seg.closest('.seg').parentElement, nn && nn.parentElement].forEach(e => { if (e) e.hidden = lock; });
     const chip = $('roleChip');
@@ -46,7 +46,7 @@
 
   /* ---- chooser dialog ---- */
   const css = document.createElement('style');
-  css.textContent = '.role-ov{position:fixed;inset:0;z-index:60;display:none;place-items:center;padding:20px;background:color-mix(in srgb,var(--bg) 78%,#000 22%);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}' +
+  css.textContent = '.role-ov{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;display:none;place-items:center;padding:20px;background:rgba(60,54,49,.55);background:color-mix(in srgb,var(--bg) 78%,#000 22%);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}' +
     '.role-ov.on{display:grid}.role-box{width:min(760px,100%);padding:28px 30px;max-height:94vh;overflow:auto}.role-box h1{margin:0 0 4px;font-size:1.3rem}' +
     '.role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:20px 0}' +
     '.role-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;padding:18px;border-radius:18px;height:100%}.role-card::before{content:"";width:44px;height:44px;background:var(--ic) center/contain no-repeat}' +

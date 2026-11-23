@@ -94,7 +94,7 @@
       const m = [], s = [];
       for (let j = 0; j < 4; j++) {
         const mu = xs.reduce((a, x) => a + x[j], 0) / xs.length;
-        const v = xs.reduce((a, x) => a + (x[j] - mu) ** 2, 0) / xs.length;
+        const v = xs.reduce((a, x) => a + Math.pow(x[j] - mu, 2), 0) / xs.length;
         m.push(mu);
         s.push(Math.max(Math.sqrt(v), floors[j]));
       }
@@ -148,7 +148,7 @@
 
   Core.baseFrom = rows => {
     const m = k => rows.reduce((s, x) => s + x[k], 0) / rows.length;
-    const sd = (k, fl) => { const mu = m(k); return Math.max(Math.sqrt(rows.reduce((s, x) => s + (x[k] - mu) ** 2, 0) / rows.length), fl); };
+    const sd = (k, fl) => { const mu = m(k); return Math.max(Math.sqrt(rows.reduce((s, x) => s + Math.pow(x[k] - mu, 2), 0) / rows.length), fl); };
     return { flow: m('flow'), dist: m('dist'), turb: m('turb'), sf: sd('flow', Math.max(0.05, 0.05 * m('flow'))), sd: sd('dist', 0.2), st: sd('turb', 10) };
   };
 

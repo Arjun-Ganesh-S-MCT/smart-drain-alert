@@ -1,9 +1,10 @@
+[hidden]{display:none!important}
 /* Professional polish layer: loaded last, only refines the existing look (same themes, same components). */
 :root{--rad:18px;--gap:22px}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 body{max-width:1380px;margin:0 auto;padding:0 28px 40px;font-size:13.5px;line-height:1.5;letter-spacing:.005em}
 /* top app bar */
-header{position:sticky;top:0;z-index:30;margin:0 -28px 18px;padding:14px 28px;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 1px 0 color-mix(in srgb,var(--sd) 70%,transparent),0 8px 18px -14px var(--sd)}
+header{position:sticky;top:0;z-index:30;margin:0 -28px 18px;padding:14px 28px;background:var(--bg);background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 18px -14px var(--sd);box-shadow:0 1px 0 color-mix(in srgb,var(--sd) 70%,transparent),0 8px 18px -14px var(--sd)}
 header h1{font-size:1.15rem;letter-spacing:.01em}
 header .sub{letter-spacing:.02em}
 #conn{padding:7px 14px;border-radius:99px;box-shadow:inset 3px 3px 6px var(--sd),inset -3px -3px 6px var(--sl);font-size:.78rem;font-weight:600}
@@ -45,8 +46,8 @@ label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:upperc
 /* tables, logs */
 table.h,#dmTable{font-size:.78rem}
 table.h th,#dmTable th{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:8px 10px;position:sticky;top:0;background:var(--bg)}
-table.h td,#dmTable td{padding:9px 10px;border-top:1px solid color-mix(in srgb,var(--sd) 55%,transparent)}
-#dmTable tr.dm-row:hover td{background:color-mix(in srgb,var(--ac) 8%,transparent)}
+table.h td,#dmTable td{padding:9px 10px;border-top:1px solid rgba(128,118,110,.3);border-top:1px solid color-mix(in srgb,var(--sd) 55%,transparent)}
+#dmTable tr.dm-row:hover td{background:rgba(252,128,104,.08);background:color-mix(in srgb,var(--ac) 8%,transparent)}
 .inc{border-radius:12px;padding:12px 16px}
 .log{gap:10px}
 /* canvases and diagram frame */
@@ -68,8 +69,8 @@ html.calm .sonar path,html.calm .led,html.calm .bub circle{animation:none!import
 .dm-stats .card{padding:18px 22px}
 .dm-side h2{margin-bottom:14px}
 /* scrollbars */
-*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--mu) 55%,transparent) transparent}
-::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--mu) 50%,transparent);border-radius:9px}::-webkit-scrollbar-track{background:transparent}
+*{scrollbar-width:thin;scrollbar-color:var(--mu) transparent}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:var(--mu);opacity:.6;background:color-mix(in srgb,var(--mu) 50%,transparent);border-radius:9px}::-webkit-scrollbar-track{background:transparent}
 ::selection{background:color-mix(in srgb,var(--ac) 35%,transparent)}
 /* Drip extras */
 .dpart{position:fixed;z-index:14;pointer-events:none;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(circle at 35% 30%,#d8f1ff,#4fa8e0);box-shadow:0 0 6px #4fa8e066}

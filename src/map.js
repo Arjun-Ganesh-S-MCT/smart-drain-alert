@@ -188,8 +188,8 @@
       $('dmInc').innerHTML = '<b>' + esc(INC_ST[inc.status]) + '</b>' + (inc.team ? ' · ' + esc(inc.team) : '') + '<br>' + inc.log.slice(-4).map(e => esc(new Date(e.t).toLocaleTimeString() + ' ' + e.m)).join('<br>');
       if (inc.team && !$('dmTeam').dataset.touched) $('dmTeam').value = inc.team;
     } else $('dmInc').textContent = T('Possible blockage: no work order yet. Assigning a team opens one.');
-    $('dmStart').disabled = !inc || inc.status !== 'assigned';
-    $('dmDone').disabled = !inc;
+    $('dmStart').hidden = !inc || inc.status !== 'assigned';
+    $('dmDone').hidden = !inc;
   }
   function view(v) { $('dmBody').dataset.v = v; [...$('dmSub').children].forEach(b => b.classList.toggle('on', b.dataset.v === v)); if (v === 'map' && map) setTimeout(() => map.invalidateSize(), 50); }
   $('dmSub').onclick = e => { const b = e.target.closest('button'); if (b) view(b.dataset.v); };
