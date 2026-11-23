@@ -1,9 +1,9 @@
-# FlowSense firmware (ESP32-S3)
+# FlowBeacon firmware (ESP32-S3)
 
-Arduino sketch in `flowsense/flowsense.ino`. Install the libraries **ArduinoJson** (version 7) and **WebSockets** by Markus Sattler from the Library Manager, select an ESP32-S3 board, then upload.
+Arduino sketch in `flowbeacon/flowbeacon.ino`. Install the libraries **ArduinoJson** (version 7) and **WebSockets** by Markus Sattler from the Library Manager, select an ESP32-S3 board, then upload.
 
 ## Before you upload
-- Open `flowsense.ino` and set the pin numbers at the top to match your wiring. The values there are placeholders.
+- Open `flowbeacon.ino` and set the pin numbers at the top to match your wiring. The values there are placeholders.
 - Set `NODE_ID` to a different name for each drain, for example `drain-2`. The app shows each node as its own drain.
 - The ultrasonic echo, turbidity output and flow signal can exceed 3.3 V. Put them through the 4-channel voltage divider before connecting.
 - If your turbidity module reads lower when the water is dirtier, keep `TURB_INVERT` true. If the rain plate reads high when wet, set `RAIN_ACTIVE_LOW` to false.
@@ -15,4 +15,4 @@ Arduino sketch in `flowsense/flowsense.ino`. Install the libraries **ArduinoJson
 - Remembers the Wi-Fi details in flash and reconnects after a restart.
 
 ## Learned model (optional)
-In the app, record labelled tests, train under Learn from recordings, press Export model.h, and replace `flowsense/model.h` with it. The board then adds an `"ml"` field with its own classification, computed on the ESP32-S3 with no PC.
+In the app, record labelled tests, train under Learn from recordings, press Export model.h, and replace `flowbeacon/model.h` with it. The board then adds an `"ml"` field with its own classification, computed on the ESP32-S3 with no PC.
