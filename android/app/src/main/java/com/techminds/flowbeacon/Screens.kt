@@ -147,7 +147,7 @@ fun Toolbar(vm: AppVm, go: (String) -> Unit) {
             NeuSlider(vm.vol, { vm.setVolume(it) }, Modifier.width(110.dp))
             Sep()
             Sub("Drip")
-            NeuSwitch(vm.dripOn, { vm.setDripOn(it) })
+            NeuSwitch(vm.dripOn, { vm.updateDripOn(it) })
         }
     }
 }
@@ -474,7 +474,7 @@ fun CalibPage(vm: AppVm) {
             Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                 pair.forEach { (k, label, r) ->
                     Column(Modifier.width(140.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Knob(vm.cfg.get(k), r[0], r[1], r[2], { v -> vm.setCfg(vm.cfg.with(k, v)) })
+                        Knob(vm.cfg.get(k), r[0], r[1], r[2], { v -> vm.updateCfg(vm.cfg.with(k, v)) })
                         val v = vm.cfg.get(k)
                         T((if (v % 1.0 == 0.0) v.toInt().toString() else v.toString()) + " " + (if (label.contains("(%)")) "%" else "cm"), size = 15, bold = true, align = TextAlign.Center)
                         T(label.uppercase(), Modifier.fillMaxWidth().padding(horizontal = 4.dp), 11, true, FB.MU, TextAlign.Center, 0.7f)
@@ -524,7 +524,7 @@ fun SettingsPage(vm: AppVm) {
     NeuCard(title = "Appearance and behaviour") {
         FieldLabel("Theme colour")
         Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Palettes.ACCENTS.forEach { (k, _, c) -> Swatch(Color(c), vm.accent == k) { vm.setAccent(k) } }
+            Palettes.ACCENTS.forEach { (k, _, c) -> Swatch(Color(c), vm.accent == k) { vm.updateAccent(k) } }
         }
         FieldLabel("Mode")
         NeuSelect(listOf("light" to "Light", "dark" to "Dark", "auto" to "Follow system"), vm.mode, { vm.setModeTo(it) })

@@ -157,13 +157,13 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     fun resetDevPw(): String { prefs.devPw = ""; return "Password reset to 1234." }
 
     // ---- settings ----
-    fun setCfg(c: Cfg) { cfg = c; prefs.cfg = c }
-    fun resetCfg() = setCfg(Cfg())
+    fun updateCfg(c: Cfg) { cfg = c; prefs.cfg = c }
+    fun resetCfg() = updateCfg(Cfg())
     fun setMuted(m: Boolean) { mute = m; prefs.mute = m }
     fun setVolume(v: Float) { vol = v; prefs.vol = v }
     fun setVibrateOn(v: Boolean) { vibrate = v; prefs.vibrate = v }
-    fun setDripOn(v: Boolean) { dripOn = v; prefs.drip = v }
-    fun setAccent(a: String) { accent = a; prefs.accent = a }
+    fun updateDripOn(v: Boolean) { dripOn = v; prefs.drip = v }
+    fun updateAccent(a: String) { accent = a; prefs.accent = a }
     fun setModeTo(m: String) { mode = m; prefs.mode = m }
     fun setCalmOn(c: Boolean) { calm = c; prefs.calm = c }
     fun renameNode(n: String) { val t = n.trim().ifEmpty { "Drain 1" }; node = t; prefs.node = t }
@@ -292,7 +292,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         wzBuf = ArrayList(); wzRecording = true
     }
 
-    fun wizardApply() { wzSug?.let { setCfg(it); msg = "Suggested thresholds applied." } }
+    fun wizardApply() { wzSug?.let { updateCfg(it); msg = "Suggested thresholds applied." } }
 
     private fun wizardData(buf: ArrayList<Reading>) {
         if (buf.size < 10) return
