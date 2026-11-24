@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fb_bg">#E0D9D3</color>
+    <!-- Plain cream while the app starts, so nothing flashes before the intro -->
+    <style name="Theme.FlowBeacon" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/fb_bg</item>
+        <item name="android:statusBarColor">@color/fb_bg</item>
+        <item name="android:navigationBarColor">@color/fb_bg</item>
+    </style>
+</resources>

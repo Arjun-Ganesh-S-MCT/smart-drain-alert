@@ -3,7 +3,7 @@
    so it checks GitHub and offers the download page. Keep VERSION equal to package.json (tests enforce it). */
 (function () {
   'use strict';
-  const VERSION = '1.9.0';
+  const VERSION = '2.0.0';
   const REPO = 'Arjun-Ganesh-S-MCT/smart-drain-alert';
   const FB = window.flowbeacon || {};
   const T = s => (window.trans ? window.trans(s) : s);
