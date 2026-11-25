@@ -64,6 +64,49 @@ class Prefs(ctx: Context) {
         get() = sp.getInt("sms_cool", 5)
         set(v) = sp.edit().putInt("sms_cool", v).apply()
 
+    var lang: String
+        get() = sp.getString("lang", "en") ?: "en"
+        set(v) = sp.edit().putString("lang", v).apply()
+    var zoom: Float
+        get() = sp.getFloat("zoom", 1f)
+        set(v) = sp.edit().putFloat("zoom", v).apply()
+    var notify: Boolean
+        get() = sp.getBoolean("notify", true)
+        set(v) = sp.edit().putBoolean("notify", v).apply()
+    var bg: Boolean
+        get() = sp.getBoolean("bg", true)
+        set(v) = sp.edit().putBoolean("bg", v).apply()
+    var upd: Boolean
+        get() = sp.getBoolean("upd", true)
+        set(v) = sp.edit().putBoolean("upd", v).apply()
+    var quietOn: Boolean
+        get() = sp.getBoolean("q_on", false)
+        set(v) = sp.edit().putBoolean("q_on", v).apply()
+    var quietFrom: String
+        get() = sp.getString("q_from", "22:00") ?: "22:00"
+        set(v) = sp.edit().putString("q_from", v).apply()
+    var quietTo: String
+        get() = sp.getString("q_to", "06:00") ?: "06:00"
+        set(v) = sp.edit().putString("q_to", v).apply()
+    var quietSms: Int
+        get() = sp.getInt("q_sms", 3)
+        set(v) = sp.edit().putInt("q_sms", v).apply()
+    var useModel: Boolean
+        get() = sp.getBoolean("use_model", false)
+        set(v) = sp.edit().putBoolean("use_model", v).apply()
+    var modelJson: String
+        get() = sp.getString("model", "") ?: ""
+        set(v) = sp.edit().putString("model", v).apply()
+    var profilesJson: String
+        get() = sp.getString("profiles", "[]") ?: "[]"
+        set(v) = sp.edit().putString("profiles", v).apply()
+    var mapJson: String
+        get() = sp.getString("map", "") ?: ""
+        set(v) = sp.edit().putString("map", v).apply()
+    var nodesJson: String
+        get() = sp.getString("nodes", "{}") ?: "{}"
+        set(v) = sp.edit().putString("nodes", v).apply()
+
     var cfg: Cfg
         get() {
             val d = Cfg()

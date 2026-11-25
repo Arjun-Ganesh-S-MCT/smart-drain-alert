@@ -100,5 +100,73 @@ class EngineFlow(unittest.TestCase):
         self.assertTrue(any(m.get("cmd") == "sms" and m["to"] == "+919876543210" for m in self.link.sent))
 
 
+class NewFeatures(unittest.TestCase):
+    def setUp(self):
+        os.environ["APPDATA"] = tempfile.mkdtemp()          # every test starts with fresh settings
+        self.link, self.snd = FakeLink(), FakeSound()
+        self.e = Engine(Store(), self.link, self.snd)
+        self.notes = []
+        self.e.notify.connect(lambda t, b: self.notes.append((t, b)))
+
+    def baseline(self):
+        self.e.start_baseline()
+        feed(self.link, 10, 4.2, 12.5)
+
+    def test_other_drain_is_tracked_and_listed(self):
+        for _ in range(12):
+            self.link.cb({"node": "demo-2", "flow": 4.1, "dist": 12.4, "turb": 870, "rain": 0})
+        self.assertIn("demo-2", self.e.nodes)
+        self.assertEqual(self.e.nodes["demo-2"]["lvl"], 0)
+        ids = [n["id"] for n in self.e.live_nodes()]
+        self.assertIn("demo-2", ids)
+        self.link.cb({"node": "demo-2", "flow": 0.5, "dist": 3.0, "turb": 1300, "rain": 1})
+        self.assertGreaterEqual(self.e.nodes["demo-2"]["lvl"], 2)
+        self.assertTrue(self.e.city.open_inc("demo-2"))
+
+    def test_notification_and_quiet_hours(self):
+        self.baseline()
+        feed(self.link, 2, 1.0, 11.0)
+        self.assertTrue(self.notes)
+        self.notes.clear()
+        self.e.s["quiet"].update({"on": True, "from": "00:00", "to": "23:59"})
+        self.e.last_lvl = 0
+        feed(self.link, 2, 1.0, 11.0)                      # warning level during quiet hours: no notification
+        self.assertFalse([n for n in self.notes if "Blockage warning" in n[0]])
+        self.assertTrue(self.e.in_quiet())
+
+    def test_quiet_hours_raise_sms_minimum(self):
+        self.e.s["sms"] = {"on": True, "nums": "9876543210", "min": 2, "cool": 5}
+        self.e.s["quiet"].update({"on": True, "from": "00:00", "to": "23:59", "smsMin": 4})
+        self.baseline()
+        feed(self.link, 2, 1.0, 11.0)                      # warning: below the quiet-hours minimum
+        self.assertFalse(any(m.get("cmd") == "sms" for m in self.link.sent))
+
+    def test_train_uses_baseline_and_shows_label(self):
+        self.assertEqual(self.e.train([{"label": "x", "flow": 1, "dist": 1, "turb": 1, "rain": 0}]), "Set the baseline first.")
+        self.baseline()
+        rows = [{"label": "normal", "flow": 4.2, "dist": 12.5, "turb": 850, "rain": 0}] * 10 + [{"label": "blocked", "flow": 1.5, "dist": 9.5, "turb": 1100, "rain": 0}] * 10
+        self.assertIn("Accuracy", self.e.train(rows))
+        self.e.s["useModel"] = True
+        feed(self.link, 1, 1.5, 9.5, 1100)
+        self.assertIn("blocked", self.e.last["ml"])
+
+    def test_profiles(self):
+        self.baseline()
+        was = self.e.cfg["dropWarn"]
+        self.e.profile_save("garden")
+        self.e.cfg["dropWarn"] = 60
+        self.e.profile_apply(0)
+        self.assertEqual(self.e.cfg["dropWarn"], was)
+        self.e.profile_delete(0)
+        self.assertEqual(self.e.s["profiles"], [])
+
+    def test_history_is_written(self):
+        from flowbeacon_app.history import History
+        self.e.history = History(os.path.join(tempfile.mkdtemp(), "h.db"))
+        feed(self.link, 5, 4.2, 12.5)
+        self.e.history.flush_all()
+        self.assertEqual(sum(r["n"] for r in self.e.history.range("drain-1", 0, 4e12)), 5)
+
+
 if __name__ == "__main__":
     unittest.main()

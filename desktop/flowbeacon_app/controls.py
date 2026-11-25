@@ -390,6 +390,8 @@ class Knob(NeuItem, QWidget):
     """Calibration dial: 28 ticks, 270 degree arc, raised knob with an accent dot. Drag, wheel or arrow keys."""
     neu_margin = 26
     changed = Signal(float)
+    grabbed = Signal()
+    released = Signal()
 
     def __init__(self, lo, hi, step, value):
         super().__init__()
@@ -416,6 +418,7 @@ class Knob(NeuItem, QWidget):
 
     def mousePressEvent(self, e):
         self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        self.grabbed.emit()
         self._from_pos(e.position())
 
     def mouseMoveEvent(self, e):
@@ -424,6 +427,7 @@ class Knob(NeuItem, QWidget):
 
     def mouseReleaseEvent(self, _e):
         self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self.released.emit()
 
     def wheelEvent(self, e):
         self.set_value(self.v + (1 if e.angleDelta().y() > 0 else -1) * self.step, True)

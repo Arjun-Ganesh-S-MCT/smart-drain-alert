@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication
 
 from . import theme
 from .main_window import MainWindow
+from .sound import ClickSounds
 from .store import Store
 from .theme import ASSETS, THEME
 from .widgets import Splash
@@ -21,15 +22,21 @@ def main():
     THEME.accent, THEME.mode = st["accent"], st["mode"]
     app.setFont(theme.font(13))
     app.setStyleSheet(theme.qss())
-    splash = Splash()
     win = MainWindow()
-    splash.show()
+    clicks = ClickSounds(win.sound)
+    app.installEventFilter(clicks)
+    app._clicks = clicks
+    if "--hidden" in sys.argv and st["tray"]:
+        win.start(hidden=True)                      # started with the computer: stay in the tray
+    else:
+        splash = Splash()
+        splash.show()
 
-    def done():
-        splash.close()
-        win.start()
+        def done():
+            splash.close()
+            win.start()
 
-    splash.finished.connect(done)
+        splash.finished.connect(done)
     sys.exit(app.exec())
 
 

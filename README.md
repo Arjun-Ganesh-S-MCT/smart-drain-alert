@@ -10,7 +10,7 @@ Two real native apps, no browser inside either of them:
 Windows and Linux share one Qt codebase, so there are two projects, not three.
 
 ## Run and build
-- Desktop: `cd desktop && pip install -r requirements.txt && python -m flowbeacon_app.main` (from the `desktop` folder: `python __main__.py`). Tests: `python -m unittest discover -s tests`. Package: `python build_exe.py`.
+- Desktop: `cd desktop && pip install -r requirements.txt && python -m flowbeacon_app.main` (from the `desktop` folder: `python __main__.py`). Tests: `python -m unittest discover -s tests`. Linux package: `python build_exe.py`. Windows installer: `python build_msi.py`.
 - Android: open `android/` in Android Studio, or `gradle -p android assembleRelease`. The release APK is shrunk (R8) and signed with the debug key for sideloading.
 - GitHub Actions: `.github/workflows/native.yml` builds both.
 
@@ -22,8 +22,25 @@ Splash intro (slow on Android), Consumer / Maintenance / Developer modes (button
 
 The analysis core is a line-for-line port of the old `core.js`. `desktop/tests/fixtures.json` holds 400 readings run through the original JavaScript, and the Python port reproduces every result. The Kotlin port follows the same code. Neither UI has been run on a real device yet: only the Python logic and a stand-in for Qt were exercised here.
 
-## Not ported yet
-History tab (stored sensor charts), City map and team dispatch, Tamil and text size, learn-from-recordings and replay, tray icon, start-with-PC, update checker, quiet hours, Android background alerts, Android USB serial.
+## What the native apps have now
 
-## Licences
-JetBrains Mono is bundled under the SIL Open Font License (see `JetBrainsMono-OFL.txt` in each assets/fonts folder).
+Both apps have every tab of the web app: Overview, Drain model, Incidents, Connection, **History**, Calibration, Ask Drip, Settings, Console and **City map**. Added in this version:
+
+- History (minute averages kept 90 days, 24 h / 7 d / 30 d, CSV export).
+- City map and dispatch: pins, ward / zone / status filters, assign a team, start work, resolve, incident log, officials PIN. The map is drawn as a schematic grid from latitude and longitude, so it needs no internet or map tiles.
+- Other drains (demo mode adds two) with their own baselines, alerts and incidents.
+- Learn from recordings, replay of a recorded CSV, calibration profiles.
+- Tamil and text size, update check (GitHub releases), quiet hours.
+- Sounds: click on every button, dial tick and spin, quiet hours and the per-sound switches.
+- Desktop: tray icon, desktop notifications, close to tray, start with the computer.
+- Android: background alerts (foreground service plus notifications) and USB serial through an OTG cable.
+
+## Windows installer
+
+Windows is delivered as an `.msi` only: `cd desktop && pip install -r requirements-msi.txt && python build_msi.py` (on Windows), or take it from the `FlowBeacon-Windows-msi` artifact of the GitHub workflow.
+
+## Still not done
+
+- Speaking alerts aloud (web "Drip voice") is not in the native apps.
+- The map has no street tiles.
+- Nothing here has been built or run on a real device. The Python logic and a Qt stand-in are tested; the Kotlin and the MSI were written but not compiled in this environment.

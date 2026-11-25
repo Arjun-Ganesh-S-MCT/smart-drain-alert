@@ -10,10 +10,10 @@ from .neu import Canvas, NeuItem, tiles
 from .store import DEFAULT_PW_HASH, pw_hash
 from .theme import THEME, font
 
-ALL = ["overview", "model", "incidents", "connect", "calib", "drip", "settings", "console"]
+ALL = ["overview", "model", "incidents", "connect", "history", "calib", "drip", "settings", "console", "map"]
 ROLES = {
-    "consumer": ("Consumer", "See drain status, live readings, the drain model and history. No controls.", "devices", ["overview", "model", "drip", "settings"]),
-    "team": ("Maintenance team", "Full operational control: incidents, board connection and calibration.", "team", [t for t in ALL if t != "console"]),
+    "consumer": ("Consumer", "See drain status, live readings, the drain model and history. No controls.", "devices", ["overview", "model", "history", "drip", "settings"]),
+    "team": ("Maintenance team", "Full operational control: incidents, city map and dispatch, board connection and calibration.", "team", [t for t in ALL if t != "console"]),
     "dev": ("Developer", "Full control of everything, including the firmware console. Can switch to any mode. Password required.", "lock", ALL),
 }
 

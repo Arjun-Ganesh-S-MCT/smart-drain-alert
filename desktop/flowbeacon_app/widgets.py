@@ -87,6 +87,8 @@ class DripWidget(QWidget):
         self.update()
 
     def say(self, text, ms=4500):
+        from .i18n import tr
+        text = tr(text)
         self.say_text, self.say_until = text, time.time() + ms / 1000
         self.update()
 

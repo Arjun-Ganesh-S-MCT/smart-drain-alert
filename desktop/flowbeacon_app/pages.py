@@ -12,6 +12,7 @@ from . import __version__, core, drip_core
 from .controls import (ConnChip, H2, Inset, Knob, NeuButton, NeuCard, NeuCombo, NeuField, NeuSlider, NeuSwitch, Orb, Seg,
                        Swatch, sub)
 from .engine import WZ_STEPS
+from .i18n import tr, tr_ev
 from .link import Link
 from .neu import Canvas, NeuItem, tiles
 from .palettes import ACCENTS
@@ -196,10 +197,11 @@ class Overview(Page):
         self.cond = QLabel("Waiting for data")
         self.cond.setFont(font(26, True))
         self.cause, self.evid, self.pred, self.hl = sub("Connect the board or start demo mode."), sub(), sub(), sub()
+        self.mlt = sub()
         self.pred.setStyleSheet("color:%s" % THEME.pal()["ac"])
         col = QVBoxLayout()
         col.setSpacing(2)
-        for w in (self.cond, self.cause, self.evid, self.pred, self.hl):
+        for w in (self.cond, self.cause, self.evid, self.pred, self.hl, self.mlt):
             col.addWidget(w)
         self.pills = hbox(gap=8)
         col.addLayout(self.pills)
@@ -220,6 +222,9 @@ class Overview(Page):
         dr = NeuCard("Drains")
         self.tile = Tile(ctx.store["node"])
         dr.box.addLayout(hbox(self.tile, None))
+        self.more = sub("")
+        dr.box.addWidget(self.more)
+        e.nodes_changed.connect(self.show_more)
         self.rn = NeuField(ctx.store["node"])
         rb = NeuButton("Rename")
         rb.clicked.connect(self.rename)
@@ -246,6 +251,10 @@ class Overview(Page):
         w.setLayout(layout)
         return w
 
+    def show_more(self):
+        icons = ["✓", "?", "▲", "■", "✖"]
+        self.more.setText("\n".join("%s · %s %s" % (n["name"], icons[n["lvl"]], tr(core.LEVELS[n["lvl"]][0])) for n in self.ctx.engine.nodes.values()))
+
     def rename(self):
         n = self.rn.text().strip() or "Drain 1"
         self.ctx.store["node"] = n
@@ -257,10 +266,11 @@ class Overview(Page):
         self.cond.setText("%s %s" % (u["icon"], u["name"]))
         self.cond.setStyleSheet("color:%s" % u["color"])
         self.orb.set_color(u["color"])
-        self.cause.setText(r["cause"])
-        self.evid.setText(" · ".join(r["ev"]) or ("Readings match baseline" if b else "Set a baseline while flow is normal"))
-        self.pred.setText(u["pred"])
-        self.hl.setText(("Sensor check: " + "; ".join(u["issues"])) if u["issues"] else "Sensors look healthy")
+        self.cause.setText(tr(r["cause"]))
+        self.evid.setText(tr_ev(" · ".join(r["ev"])) or tr("Readings match baseline" if b else "Set a baseline while flow is normal"))
+        self.pred.setText(tr(u["pred"]))
+        self.mlt.setText(u.get("ml", ""))
+        self.hl.setText((tr("Sensor check") + ": " + "; ".join(u["issues"])) if u["issues"] else tr("Sensors look healthy"))
         self.hl.setStyleSheet("color:#e8761f" if u["issues"] else "")
         while self.pills.count():
             it = self.pills.takeAt(0)

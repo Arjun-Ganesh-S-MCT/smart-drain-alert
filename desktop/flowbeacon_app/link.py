@@ -14,6 +14,7 @@ try:
 except ImportError:  # pragma: no cover
     QWebSocket = None
 
+DEMO_EXTRA = [("demo-2", 4.1, 12.4, 870), ("demo-3", 2.2, 10.6, 1100)]
 SCEN = {"normal": (4.2, 12.5, 850, 0), "partial": (2, 11, 1150, 0), "rain": (4.1, 10.8, 860, 1),
         "both": (1.6, 8.5, 1200, 1), "over": (0.9, 1.8, 1300, 1)}
 
@@ -25,6 +26,7 @@ class Link(QObject):
     message = Signal(str)               # for the status line
     board_ip = Signal(str)
     wifi_failed = Signal()
+    replay_done = Signal()
 
     def __init__(self):
         super().__init__()
@@ -41,6 +43,10 @@ class Link(QObject):
         self._buf = ""
         self.demo_timer = QTimer(self)
         self.demo_timer.timeout.connect(self._demo_step)
+        self.replaying = False
+        self._rows, self._ri = [], 0
+        self.replay_timer = QTimer(self)
+        self.replay_timer.timeout.connect(self._replay_step)
 
     # ---- demo ----
     def start_demo(self):
@@ -60,10 +66,35 @@ class Link(QObject):
         p = SCEN["normal" if self.cal_pending else self.scen]
         n = lambda: random.random() - 0.5  # noqa: E731
         self.data.emit({"flow": p[0] + n() * 0.2, "dist": p[1] + n() * 0.2, "turb": p[2] + n() * 30, "rain": p[3]})
+        for nid, fl, di, tu in DEMO_EXTRA:           # two more drains, so the city map has something to show
+            self.data.emit({"node": nid, "flow": fl + n() * 0.2, "dist": di + n() * 0.2, "turb": tu + n() * 30, "rain": 0})
+
+    # ---- replay of a recorded CSV ----
+    def start_replay(self, rows, speed):
+        self.stop_all()
+        self._rows, self._ri, self.replaying = rows, 0, True
+        self.replay_timer.start(int(max(40, 1000 / max(0.1, speed))))
+        self.connection.emit(False, "Replay")
+
+    def stop_replay(self):
+        if self.replaying:
+            self.replaying = False
+            self.replay_timer.stop()
+            self.connection.emit(False, "Not connected")
+
+    def _replay_step(self):
+        if self._ri >= len(self._rows):
+            self.stop_replay()
+            self.replay_done.emit()
+            return
+        x = self._rows[self._ri]
+        self._ri += 1
+        self.data.emit({"flow": x["flow"], "dist": x["dist"], "turb": x["turb"], "rain": x["rain"]})
 
     # ---- common ----
     def stop_all(self):
         self.stop_demo()
+        self.stop_replay()
         self.ws_auto = False
         if self.ws is not None:
             try:

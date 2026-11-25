@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -26,18 +27,20 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
-class Snap(val d: Reading, val e: Eval, val level: Level, val issues: List<String>, val pred: String)
+class Snap(val d: Reading, val e: Eval, val level: Level, val issues: List<String>, val pred: String, val ml: String = "")
+
+class Profile(val name: String, val cfg: Cfg, val base: Base?)
 
 object Roles {
-    val ALL = listOf("overview", "model", "incidents", "connect", "calib", "drip", "settings", "console")
+    val ALL = listOf("overview", "model", "incidents", "connect", "history", "calib", "drip", "settings", "console", "map")
     val NAME = mapOf("consumer" to "Consumer", "team" to "Maintenance team", "dev" to "Developer")
     val DESC = mapOf(
         "consumer" to "See drain status, live readings, the drain model and history. No controls.",
-        "team" to "Full operational control: incidents, board connection and calibration.",
+        "team" to "Full operational control: incidents, city map and dispatch, board connection and calibration.",
         "dev" to "Full control of everything, including the firmware console. Can switch to any mode. Password required."
     )
     fun tabs(role: String): List<String> = when (role) {
-        "consumer" -> listOf("overview", "model", "drip", "settings")
+        "consumer" -> listOf("overview", "model", "history", "drip", "settings")
         "team" -> ALL.filter { it != "console" }
         else -> ALL
     }
@@ -49,6 +52,12 @@ val WZ_STEPS = listOf("Normal flow, valve fully open", "Partial valve, about hal
 class AppVm(app: Application) : AndroidViewModel(app) {
     val prefs = Prefs(app)
     val sound = Sound(app, prefs)
+    val history = HistoryDb(app)
+    val city = CityBook(prefs)
+    private val nodeMap = LinkedHashMap<String, NodeLive>()
+    var appVisible = false
+    private var lastRxWall = 0L
+    private var secCount = 0
     private val main = Handler(Looper.getMainLooper())
     private val http = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).pingInterval(20, TimeUnit.SECONDS).build()
 
@@ -82,6 +91,30 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     var calm by mutableStateOf(prefs.calm)
     var node by mutableStateOf(prefs.node)
     var sndVer by mutableStateOf(0)
+    var nodesVer by mutableStateOf(0)
+    var cityVer by mutableStateOf(0)
+    var lang by mutableStateOf(prefs.lang)
+    var zoom by mutableStateOf(prefs.zoom)
+    var notifyOn by mutableStateOf(prefs.notify)
+    var bgOn by mutableStateOf(prefs.bg)
+    var updOn by mutableStateOf(prefs.upd)
+    var quietOn by mutableStateOf(prefs.quietOn)
+    var quietFrom by mutableStateOf(prefs.quietFrom)
+    var quietTo by mutableStateOf(prefs.quietTo)
+    var quietSms by mutableStateOf(prefs.quietSms)
+    var useModel by mutableStateOf(prefs.useModel)
+    var model by mutableStateOf(NbModel.fromJson(prefs.modelJson))
+    var trainRows by mutableStateOf<List<CsvRow>>(emptyList())
+    var trainMsg by mutableStateOf("")
+    var playRows by mutableStateOf<List<CsvRow>>(emptyList())
+    var replaying by mutableStateOf(false)
+    var replayMsg by mutableStateOf("")
+    val profiles = mutableStateListOf<Profile>()
+    var upd by mutableStateOf<UpdateInfo?>(null)
+    var updMsg by mutableStateOf("")
+    var usbLabels by mutableStateOf<List<String>>(emptyList())
+    private var usbDrivers: List<com.hoho.android.usbserial.driver.UsbSerialDriver> = emptyList()
+    private var usb: UsbLink? = null
     var recording by mutableStateOf(false)
     var recCount by mutableStateOf(0)
     private val recRows = ArrayList<String>()
@@ -129,9 +162,175 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             Roles.NAME.containsKey(saved) -> { role = saved; roleChosen = true }
             else -> { role = "consumer"; roleChosen = true }
         }
+        loadProfiles()
+        sound.quiet = { inQuiet() }
+        history.prune()
+        if (prefs.upd) main.postDelayed({ checkUpdates(false) }, 6000)
         viewModelScope.launch {
             while (isActive) { delay(1000); secondTick() }
         }
+    }
+
+    // ---- quiet hours, language, text size, notifications ----
+    fun inQuiet(): Boolean {
+        if (!quietOn) return false
+        fun m(x: String): Int { val p = x.split(":"); return (p.getOrNull(0)?.toIntOrNull() ?: 0) * 60 + (p.getOrNull(1)?.toIntOrNull() ?: 0) }
+        val c = java.util.Calendar.getInstance()
+        val now = c.get(java.util.Calendar.HOUR_OF_DAY) * 60 + c.get(java.util.Calendar.MINUTE)
+        val a = m(quietFrom); val b = m(quietTo)
+        return if (a <= b) now in a until b else (now >= a || now < b)
+    }
+
+    fun setLanguage(l: String) { lang = l; prefs.lang = l }
+    fun setZoomTo(z: Float) { zoom = z; prefs.zoom = z }
+    fun chgNotify(v: Boolean) { notifyOn = v; prefs.notify = v }
+    fun chgBg(v: Boolean) { bgOn = v; prefs.bg = v; syncService() }
+    fun chgUpd(v: Boolean) { updOn = v; prefs.upd = v }
+    fun chgQuietOn(v: Boolean) { quietOn = v; prefs.quietOn = v }
+    fun chgQuietFrom(v: String) { quietFrom = v; prefs.quietFrom = v }
+    fun chgQuietTo(v: String) { quietTo = v; prefs.quietTo = v }
+    fun chgQuietSms(v: Int) { quietSms = v; prefs.quietSms = v }
+    fun chgUseModel(v: Boolean) { useModel = v; prefs.useModel = v }
+
+    private fun notifyLevel(lvl: Int, name: String, cause: String, node: String) {
+        if (!notifyOn || lvl < 2 || (inQuiet() && lvl < 3) || appVisible) return      // the app itself already shows a banner and plays a sound
+        Notifier.alert(getApplication(), "FlowBeacon: " + Tamil.trans(name, lang), node + " · " + Tamil.trans(cause, lang))
+    }
+
+    /** Keeps the app alive in the background while a board is connected (a foreground service with a small notification). */
+    fun syncService() {
+        val app = getApplication<Application>()
+        if (bgOn && connected && !demo) AlertService.start(app, node + ": " + (snap?.level?.name ?: "waiting for data")) else AlertService.stop(app)
+    }
+
+    // ---- calibration profiles ----
+    private fun loadProfiles() {
+        try {
+            val a = org.json.JSONArray(prefs.profilesJson)
+            for (i in 0 until a.length()) {
+                val o = a.getJSONObject(i); val c = o.getJSONObject("cfg")
+                val b = o.optJSONObject("base")
+                profiles.add(Profile(o.getString("name"), Cfg(c.getDouble("dropWarn"), c.getDouble("dropBlock"), c.getDouble("rise"), c.getDouble("risk"), c.getDouble("over"), c.getDouble("turb")),
+                    if (b != null) Base(b.getDouble("flow"), b.getDouble("dist"), b.getDouble("turb"), b.getDouble("sf"), b.getDouble("sd"), b.getDouble("st")) else null))
+            }
+        } catch (e: Exception) { }
+    }
+
+    private fun saveProfiles() {
+        val a = org.json.JSONArray()
+        profiles.forEach { p ->
+            val o = JSONObject().put("name", p.name).put("cfg", JSONObject().put("dropWarn", p.cfg.dropWarn).put("dropBlock", p.cfg.dropBlock)
+                .put("rise", p.cfg.rise).put("risk", p.cfg.risk).put("over", p.cfg.over).put("turb", p.cfg.turb))
+            p.base?.let { b -> o.put("base", JSONObject().put("flow", b.flow).put("dist", b.dist).put("turb", b.turb).put("sf", b.sf).put("sd", b.sd).put("st", b.st)) }
+            a.put(o)
+        }
+        prefs.profilesJson = a.toString()
+    }
+
+    fun profileSave(name: String) { if (name.isBlank()) return; profiles.add(Profile(name.trim(), cfg, base)); saveProfiles() }
+    fun profileApply(i: Int) { profiles.getOrNull(i)?.let { p -> updateCfg(p.cfg); p.base?.let { base = it; prefs.base = it } } }
+    fun profileDelete(i: Int) { if (i in profiles.indices) { profiles.removeAt(i); saveProfiles() } }
+
+    // ---- learn from recordings and replay ----
+    fun loadTraining(rows: List<CsvRow>) { trainRows = rows; trainMsg = "${rows.size} readings loaded." }
+
+    fun trainModel() {
+        val b = base
+        if (b == null) { trainMsg = "Set the baseline first."; return }
+        if (trainRows.isEmpty()) { trainMsg = "No readings loaded."; return }
+        val data = trainRows.map { Labelled(it.label, Ml.features(it.r, b)) }
+        val m = Ml.train(data, b)
+        model = m; prefs.modelJson = m.toJson()
+        trainMsg = "Trained on ${data.size} readings, labels: ${m.labels.joinToString(", ")}. Accuracy on these files: ${(Ml.accuracy(m, data) * 100).roundToInt()}%."
+    }
+
+    private fun mlShow(d: Reading): String {
+        val m = model; val b = base
+        if (!useModel || m == null || b == null) return ""
+        val p = Ml.predict(m, Ml.features(d, b))
+        return "Learned model: ${p.first} (${(p.second * 100).roundToInt()}%)"
+    }
+
+    fun startReplay(rows: List<CsvRow>, speed: Int) {
+        if (rows.isEmpty()) return
+        stopAll()
+        if (base == null && rows.size >= 10) { val b = Core.baseFrom(rows.take(10).map { it.r }); base = b; prefs.base = b }
+        hist.clear(); lastLvl = 0; replaying = true; connLabel = "Replay"; replayMsg = "Playing ${rows.size} readings…"
+        demoJob = viewModelScope.launch {
+            var i = 0
+            while (isActive && i < rows.size) { onData(rows[i++].r); delay(maxOf(40L, 1000L / maxOf(1, speed))) }
+            replaying = false; connLabel = "Not connected"; replayMsg = "Replay finished."
+        }
+    }
+
+    fun stopReplay() {
+        if (!replaying) return
+        demoJob?.cancel(); demoJob = null; replaying = false; connLabel = "Not connected"; replayMsg = ""
+    }
+
+    // ---- update check ----
+    fun checkUpdates(manual: Boolean) {
+        if (manual) updMsg = "Checking…"
+        viewModelScope.launch(Dispatchers.IO) {
+            val r = Updater.check()
+            main.post {
+                if (r.error.isNotEmpty()) { if (manual) updMsg = "Could not check: " + r.error }
+                else if (r.newer) { upd = r; if (manual) updMsg = "Version ${r.latest} is available." }
+                else if (manual) updMsg = "You have the latest version (${r.current})."
+            }
+        }
+    }
+
+    // ---- other drains and the city map ----
+    fun liveNodes(): List<NodeLive> {
+        val out = ArrayList<NodeLive>()
+        val s = snap
+        if (s != null) out.add(NodeLive("drain-1", node).also { it.lvl = lastLvl; it.rx = lastRxWall; it.last = s.d; it.base = base })
+        out.addAll(nodeMap.values)
+        return out
+    }
+
+    /** Other drains as (name, level); reads nodesVer so screens refresh. */
+    fun otherNames(): List<Pair<String, Int>> { val v = nodesVer; return if (v < 0) emptyList() else nodeMap.values.map { it.name to it.lvl } }
+
+    fun nodeList(): List<Pair<String, String>> { val v = nodesVer; return if (v < 0) emptyList() else listOf("drain-1" to node) + nodeMap.values.map { it.id to it.name } }
+
+    private fun trackCity(n: NodeLive) {
+        val st = city.states(listOf(n)).firstOrNull { it.id == n.id } ?: return
+        if (city.track(st)) { city.save(); cityVer++ }
+    }
+
+    private fun otherNode(id: String, r: Reading) {
+        val n = nodeMap.getOrPut(id) {
+            NodeLive(id, CityBook.DEMO[id]?.name ?: id).also { if (id.startsWith("demo-")) it.base = Base(4.2, 12.5, 850.0, 0.2, 0.2, 30.0) }
+        }
+        n.rx = System.currentTimeMillis(); n.last = r
+        if (n.base == null) { n.buf.add(r); if (n.buf.size >= 10) n.base = Core.baseFrom(n.buf) }      // the first 10 readings of a new drain become its baseline
+        val h = Core.health(r, n.hist, n.base)
+        val e = Core.evaluate(r, h.bad, n.base, cfg)
+        if (e.lvl > n.lvl) notifyLevel(e.lvl, Core.LEVELS[e.lvl].name, e.cause, n.name)
+        n.lvl = e.lvl
+        n.hist.add(Sample(System.currentTimeMillis(), r.flow, r.dist)); while (n.hist.size > 900) n.hist.removeAt(0)
+        history.add(id, r, e.lvl)
+        trackCity(n)
+        nodesVer++
+    }
+
+    // ---- USB serial ----
+    fun refreshUsb() {
+        val u = usb ?: UsbLink(getApplication(), { line -> main.post { handleLine(line) } }, { ok, label ->
+            main.post { setConn(ok, if (ok) label else "Not connected"); msg = if (ok) "Reading from the ESP32-S3…" else label }
+        }).also { usb = it }
+        usbDrivers = u.drivers()
+        usbLabels = usbDrivers.map { d -> (d.device.productName ?: "USB device") + " (" + Integer.toHexString(d.device.vendorId) + ":" + Integer.toHexString(d.device.productId) + ")" }
+        if (usbDrivers.isEmpty()) msg = "No USB board found. Plug the ESP32-S3 into the phone with a USB OTG cable."
+    }
+
+    fun connectUsb(i: Int) {
+        val d = usbDrivers.getOrNull(i) ?: return
+        stopAll()
+        msg = "Asking for USB permission…"
+        (usb ?: return).connect(d)
     }
 
     // ---- modes ----
@@ -212,6 +411,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
 
     fun stopAll() {
         stopDemo()
+        stopReplay()
+        try { usb?.close() } catch (e: Exception) { }
         wsOn = false
         val w = ws; ws = null; wsOk = false
         try { w?.close(1000, null) } catch (e: Exception) { }
@@ -224,9 +425,12 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             if (ok) dripFlash("wave", 2200, "Board connected.")
         }
         connected = ok; connLabel = label
+        syncService()
     }
 
     fun send(o: String): Boolean {
+        val u = usb
+        if (u != null && u.isOpen) return u.write(o + "\n")
         val w = ws
         if (w != null && wsOk) return w.send(o + "\n")
         return false
@@ -245,7 +449,9 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         if (l[0] != '{') return
         val d = try { JSONObject(l) } catch (e: Exception) { return }
         if (d.has("flow")) {
-            onData(Reading(d.optDouble("flow", 0.0), d.optDouble("dist", 0.0), d.optDouble("turb", 0.0), d.optInt("rain", 0) != 0 || d.optBoolean("rain", false)))
+            val r = Reading(d.optDouble("flow", 0.0), d.optDouble("dist", 0.0), d.optDouble("turb", 0.0), d.optInt("rain", 0) != 0 || d.optBoolean("rain", false))
+            val id = d.optString("node", "drain-1").ifEmpty { "drain-1" }
+            if (id != "drain-1") otherNode(id, r) else onData(r)
         }
     }
 
@@ -262,13 +468,17 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 val p = SCEN[if (calBuf != null || wzBuf != null) "normal" else scen] ?: SCEN["normal"]!!
                 fun n() = Math.random() - 0.5
                 onData(Reading(p[0] + n() * 0.2, p[1] + n() * 0.2, p[2] + n() * 30, p[3] > 0.5))
+                DEMO_EXTRA.forEach { x -> otherNode(x.first, Reading(x.second[0] + n() * 0.2, x.second[1] + n() * 0.2, x.second[2] + n() * 30, false)) }
                 if (tick == 2 && base == null) startBaseline()
             }
         }
     }
 
     fun stopDemo() {
-        if (demo) { demo = false; demoJob?.cancel(); demoJob = null; connLabel = "Not connected" }
+        if (demo) {
+            demo = false; demoJob?.cancel(); demoJob = null; connLabel = "Not connected"
+            nodeMap.keys.removeAll { it.startsWith("demo-") }; nodesVer++
+        }
     }
 
     fun setScenario(k: String) { scen = k; msg = "Demo scenario: " + (SCEN_NAMES[k] ?: k) }
@@ -313,6 +523,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     // ---- incoming reading ----
     private fun onData(d: Reading) {
         lastRx = SystemClock.elapsedRealtime()
+        lastRxWall = System.currentTimeMillis()
         val cb = calBuf
         if (cb != null) {
             cb.add(d); msg = "Setting baseline… ${cb.size}/10"
@@ -342,6 +553,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             acked = false
             sound.play(listOf("", "possible", "warning", "risk", "overflow")[e.lvl])
             if (e.lvl >= 3) sound.buzz()
+            notifyLevel(e.lvl, level.name, e.cause, node)
+            if (bgOn && connected) Notifier.updateMonitor(getApplication(), node + ": " + level.name)
             maybeSms(e, level)
         } else if (e.lvl == 0 && lastLvl > 0) {
             sound.play("normal"); smsLastLvl = 0; dripFlash("cheer", 2500, "Back to normal!")
@@ -352,11 +565,13 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             recRows.add(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date()) + ",{L}," + d.flow + "," + d.dist + "," + d.turb + "," + (if (d.rain) 1 else 0) + "," + level.name)
             recCount = recRows.size
         }
+        history.add("drain-1", d, e.lvl)
         hist.add(Sample(System.currentTimeMillis(), d.flow, d.dist))
         while (hist.size > 900) hist.removeAt(0)
         histVer++
         faulty = h.bad || h.issues.any { it.contains("not changing") || it.contains("frozen") || it.contains("limit") }
-        snap = Snap(d, e, level, h.issues, pred)
+        snap = Snap(d, e, level, h.issues, pred, mlShow(d))
+        trackCity(NodeLive("drain-1", node).also { it.lvl = e.lvl; it.rx = lastRxWall; it.last = d; it.base = base })
         dripSync()
     }
 
@@ -377,7 +592,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
 
     private fun baseState(): String {
         val live = SystemClock.elapsedRealtime() - lastRx <= 5000
-        if (!demo && (!connected || !live)) return "sleep"
+        if (!demo && !replaying && (!connected || !live)) return "sleep"
         if (faulty) return "dizzy"
         return when {
             lastLvl >= 4 -> "panic"
@@ -424,6 +639,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         val now = SystemClock.elapsedRealtime()
         dripSync()
         if (connected && lastRx != 0L && now - lastRx > 5000) msg = "No data for ${(now - lastRx) / 1000} s: check the board and Wi-Fi"
+        secCount++
+        if (secCount % 60 == 0) history.flushAll(60000)
         if (lastLvl >= 3 && !acked) sound.play(if (lastLvl == 4) "overflow" else "risk", 3000)
     }
 
@@ -441,7 +658,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     fun testSms() { smsLog = smsSend("FlowBeacon: test message from the app.") }
 
     private fun maybeSms(e: Eval, level: Level) {
-        if (!smsOn || e.lvl < smsMin) return
+        val floor = maxOf(smsMin, if (inQuiet()) quietSms else 0)
+        if (!smsOn || e.lvl < floor) return
         val now = SystemClock.elapsedRealtime()
         if (smsLast != 0L && now - smsLast < smsCool * 60000L && e.lvl <= smsLastLvl) return
         val m = ("FlowBeacon: ${level.name}. ${e.cause}. ${e.ev.joinToString(", ")}. " +
@@ -459,11 +677,14 @@ class AppVm(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         stopAll()
+        sound.release()
+        history.flushAll()
         try { http.dispatcher.executorService.shutdown() } catch (e: Exception) { }
         super.onCleared()
     }
 
     companion object {
+        val DEMO_EXTRA = listOf("demo-2" to listOf(4.1, 12.4, 870.0), "demo-3" to listOf(2.2, 10.6, 1100.0))
         val SCEN = mapOf(
             "normal" to listOf(4.2, 12.5, 850.0, 0.0), "partial" to listOf(2.0, 11.0, 1150.0, 0.0),
             "rain" to listOf(4.1, 10.8, 860.0, 1.0), "both" to listOf(1.6, 8.5, 1200.0, 1.0), "over" to listOf(0.9, 1.8, 1300.0, 1.0)
