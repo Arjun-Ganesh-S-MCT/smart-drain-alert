@@ -480,13 +480,13 @@ class Connection(Page):
         self.ctx = ctx
         link, st = ctx.link, ctx.store
         c1 = NeuCard("Connection")
-        self.tabs = Seg([("usb", "USB"), ("wifi", "Wi-Fi")])
+        self.tabs = Seg([("usb", "USB")])
         self.tabs.picked.connect(self.pick)
         c1.box.addLayout(hbox(self.tabs, None))
         self.usb = QWidget()
         ul = QVBoxLayout(self.usb)
         ul.setContentsMargins(0, 6, 0, 0)
-        ul.addWidget(sub("Plug in the ESP32-S3 and pick its port, then press Connect. It reconnects by itself if the cable is pulled."))
+        ul.addWidget(sub("Plug in the Arduino Nano and pick its port, then press Connect. It reconnects by itself if the cable is pulled."))
         self.port = NeuCombo()
         rf, self.bu = NeuButton("Refresh"), NeuButton("Connect")
         rf.clicked.connect(self.refresh_ports)
@@ -734,7 +734,7 @@ class Settings(Page):
         d = QVBoxLayout(); d.setSpacing(10)
         d.addWidget(flabel("About"))
         d.addWidget(QLabel("FlowBeacon %s" % __version__))
-        d.addWidget(sub("by TechMinds. Smart drainage monitoring and blockage prediction for the ESP32-S3 prototype."))
+        d.addWidget(sub("by TechMinds. Smart drainage monitoring and blockage prediction for the Arduino Nano prototype."))
         d.addWidget(sub("Switch between Consumer, Maintenance and Developer modes with the button in the top bar."))
         d.addStretch(1)
         for l in (a, b, d):

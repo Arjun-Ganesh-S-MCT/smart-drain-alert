@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlin.random.Random
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -80,6 +81,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     var msg by mutableStateOf("")
     var banner by mutableStateOf("")
     var dripState by mutableStateOf("sleep")
+    var dripSpin by mutableStateOf(0)         // goes up by one each time Drip should do a spin
+    var dripLook by mutableStateOf(0f)        // -1 left, 1 right: where Drip glances
     var dripRain by mutableStateOf(false)
     var dripSayText by mutableStateOf("")
     var dripOn by mutableStateOf(prefs.drip)
@@ -163,6 +166,14 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             else -> { role = "consumer"; roleChosen = true }
         }
         loadProfiles()
+        viewModelScope.launch {                    // Drip greets you, then does something now and then (like the web app)
+            delay(5500)
+            if (dripOn && !calm && dripState == "idle") {
+                val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                dripFlash("wave", 2600, (if (h < 12) "Good morning!" else if (h < 17) "Good afternoon!" else "Good evening!") + " I am watching your drains.")
+            }
+            while (isActive) { delay(Random.nextLong(7000, 15000)); idleBehave() }
+        }
         sound.quiet = { inQuiet() }
         history.prune()
         if (prefs.upd) main.postDelayed({ checkUpdates(false) }, 6000)
@@ -319,11 +330,11 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     // ---- USB serial ----
     fun refreshUsb() {
         val u = usb ?: UsbLink(getApplication(), { line -> main.post { handleLine(line) } }, { ok, label ->
-            main.post { setConn(ok, if (ok) label else "Not connected"); msg = if (ok) "Reading from the ESP32-S3…" else label }
+            main.post { setConn(ok, if (ok) label else "Not connected"); msg = if (ok) "Reading from the Arduino Nano…" else label }
         }).also { usb = it }
         usbDrivers = u.drivers()
         usbLabels = usbDrivers.map { d -> (d.device.productName ?: "USB device") + " (" + Integer.toHexString(d.device.vendorId) + ":" + Integer.toHexString(d.device.productId) + ")" }
-        if (usbDrivers.isEmpty()) msg = "No USB board found. Plug the ESP32-S3 into the phone with a USB OTG cable."
+        if (usbDrivers.isEmpty()) msg = "No USB board found. Plug the Arduino Nano into the phone with a USB OTG cable."
     }
 
     fun connectUsb(i: Int) {
@@ -449,7 +460,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         if (l[0] != '{') return
         val d = try { JSONObject(l) } catch (e: Exception) { return }
         if (d.has("flow")) {
-            val r = Reading(d.optDouble("flow", 0.0), d.optDouble("dist", 0.0), d.optDouble("turb", 0.0), d.optInt("rain", 0) != 0 || d.optBoolean("rain", false))
+            val dist = if (d.has("dist")) d.optDouble("dist", 0.0) else Core.distFromLv(d.optInt("lv", 0))
+            val r = Reading(d.optDouble("flow", 0.0), dist, d.optDouble("turb", 0.0), d.optInt("rain", 0) != 0 || d.optBoolean("rain", false))
             val id = d.optString("node", "drain-1").ifEmpty { "drain-1" }
             if (id != "drain-1") otherNode(id, r) else onData(r)
         }
@@ -467,8 +479,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 tick++
                 val p = SCEN[if (calBuf != null || wzBuf != null) "normal" else scen] ?: SCEN["normal"]!!
                 fun n() = Math.random() - 0.5
-                onData(Reading(p[0] + n() * 0.2, p[1] + n() * 0.2, p[2] + n() * 30, p[3] > 0.5))
-                DEMO_EXTRA.forEach { x -> otherNode(x.first, Reading(x.second[0] + n() * 0.2, x.second[1] + n() * 0.2, x.second[2] + n() * 30, false)) }
+                onData(Reading(p[0] + n() * 0.2, Core.q5(p[1] + n() * 0.2), p[2] + n() * 30, p[3] > 0.5))
+                DEMO_EXTRA.forEach { x -> otherNode(x.first, Reading(x.second[0] + n() * 0.2, Core.q5(x.second[1] + n() * 0.2), x.second[2] + n() * 30, false)) }
                 if (tick == 2 && base == null) startBaseline()
             }
         }
@@ -579,8 +591,21 @@ class AppVm(app: Application) : AndroidViewModel(app) {
 
     // ---- Drip ----
     fun say(text: String, ms: Long = 4500) {
-        dripSayText = text
+        dripSayText = Tamil.trans(text, lang)
         main.removeCallbacks(sayHide); main.postDelayed(sayHide, ms)
+    }
+
+    private val IDLE = listOf(Triple("wave", 2300L, "Hello there!"), Triple("dance", 2800L, "Drain, drain, flow away!"), Triple("sing", 3200L, "La la la…"),
+        Triple("yawn", 2400L, "Quiet shift. Good."), Triple("giggle", 1500L, ""), Triple("spin", 0L, "Wheee!"), Triple("glance", 0L, ""))
+
+    private fun idleBehave() {
+        if (!dripOn || calm || dripState != "idle" || SystemClock.elapsedRealtime() < flashUntil) return
+        val (name, ms, text) = if (dripRain) Triple("dance", 2800L, "Singing in the rain!") else IDLE.random()
+        when (name) {
+            "spin" -> { dripSpin++; say(text, 1500) }
+            "glance" -> { dripLook = if (Random.nextBoolean()) -1f else 1f; main.postDelayed({ dripLook = 0f }, 900) }
+            else -> dripFlash(name, ms, text)
+        }
     }
 
     fun dripFlash(state: String, ms: Long, text: String) {

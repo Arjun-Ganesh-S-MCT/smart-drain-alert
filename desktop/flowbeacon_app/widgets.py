@@ -58,6 +58,12 @@ class DripWidget(QWidget):
         self.setMouseTracking(True)
         self.cache = {}
         self.state, self.rain = "idle", False
+        self.flash_state, self.flash_until = "", 0.0
+        self.parts = []                      # water-drop and confetti particles
+        self.squash = 0.0
+        self.spin_until = 0.0
+        self.taps, self.throws = [], []
+        self.last_hover = 0.0
         self.blink_until, self.next_blink = 0.0, time.time() + 3
         self.say_text, self.say_until = "", 0.0
         self.t0 = time.time()
@@ -72,6 +78,11 @@ class DripWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.tick)
         self.timer.start(30)
+        self.idle_timer = QTimer(self)
+        self.idle_timer.setSingleShot(True)
+        self.idle_timer.timeout.connect(self.idle_tick)
+        self.idle_timer.start(9000)
+        QTimer.singleShot(5500, self.greet)
 
     # ---- sprite
     def pm(self, name):
@@ -85,6 +96,50 @@ class DripWidget(QWidget):
     def set_state(self, s, rain=False):
         self.state, self.rain = s, rain
         self.update()
+
+    # ---- behaviour: moods of its own, idle chatter, particles ----
+    def cur(self):
+        return self.flash_state if self.flash_state and time.time() < self.flash_until else self.state
+
+    def flash(self, state, ms, text=""):
+        """Shows a mood for a short while (only when nothing is wrong), optionally with a speech bubble."""
+        if self.state != "idle" or self.calm or self.drag:
+            return
+        self.flash_state, self.flash_until = state, time.time() + ms / 1000
+        if text:
+            self.say(text, max(ms, 1800))
+        self.update()
+
+    def greet(self):
+        h = time.localtime().tm_hour
+        hi = "Good morning!" if h < 12 else "Good afternoon!" if h < 17 else "Good evening!"
+        self.flash("wave", 2600, hi + " I am watching your drains.")
+
+    IDLE = [("wave", 2300, "Hello there!"), ("dance", 2800, "Drain, drain, flow away!"), ("sing", 3200, "La la la…"),
+            ("yawn", 2400, "Quiet shift. Good."), ("giggle", 1500, ""), ("spin", 0, "Wheee!"), ("glance", 0, "")]
+
+    def idle_tick(self):
+        self.idle_timer.start(int(random.uniform(7000, 15000)))
+        if not self.isVisible() or self.calm or self.state != "idle" or self.drag:
+            return
+        name, ms, text = random.choice(self.IDLE if not self.rain else [("dance", 2800, "Singing in the rain!")])
+        if name == "glance":
+            self.look = (random.choice((-1, 1)) * 0.8, 0.1)
+            QTimer.singleShot(900, lambda: setattr(self, "look", (0.0, 0.0)))
+        elif name == "spin":
+            self.spin_until = time.time() + 0.9
+            self.say(text, 1500)
+        else:
+            self.flash(name, ms, text)
+
+    def burst(self, n=10, confetti=False):
+        cx, cy = self.width() / 2, self.BUBBLE_H + self.bh * 0.55
+        cols = ["#fc8068", "#e6b800", "#22b573", "#4f86c6", "#8a6bc9"] if confetti else ["#4fa8e0", "#7cc4f0", "#a8dcf8"]
+        for i in range(n):
+            a = i / n * math.tau + random.uniform(-0.2, 0.2)
+            v = random.uniform(120, 300)
+            self.parts.append({"x": cx, "y": cy, "vx": math.cos(a) * v, "vy": math.sin(a) * v - 120, "life": 1.0,
+                               "c": cols[i % len(cols)], "s": random.uniform(4, 8)})
 
     def say(self, text, ms=4500):
         from .i18n import tr
@@ -113,6 +168,9 @@ class DripWidget(QWidget):
             if y >= fl:
                 y = fl
                 if self.vy > 140:
+                    if self.vy > 260:
+                        self.squash = min(0.5, self.vy / 1600)
+                        self.burst(6)
                     self.vy = -self.vy * 0.52
                     self.vx *= 0.88
                 else:
@@ -127,11 +185,20 @@ class DripWidget(QWidget):
             self.move(int(x), int(y))
             if abs(self.vx) < 6 and abs(self.vy) < 6 and y >= fl - 1:
                 self.falling = False
+        if self.squash > 0.001:
+            self.squash *= 0.82
+        if self.parts:
+            for q in self.parts:
+                q["vy"] += 900 * 0.03
+                q["x"] += q["vx"] * 0.03
+                q["y"] += q["vy"] * 0.03
+                q["life"] -= 0.035
+            self.parts = [q for q in self.parts if q["life"] > 0]
         self.update()
 
     # ---- painting
     def _layers(self):
-        eyes, brows, mouth, la, ra, extra, _a = EX.get(self.state, EX["idle"])
+        eyes, brows, mouth, la, ra, extra, _a = EX.get(self.cur(), EX["idle"])
         closed = eyes == "c" or time.time() < self.blink_until
         names = ["eyes_closed" if closed else "eyes_open"]
         if brows:
@@ -168,7 +235,7 @@ class DripWidget(QWidget):
         p = QPainter(self)
         p.setRenderHints(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.SmoothPixmapTransform)
         t = time.time() - self.t0
-        anim = EX.get(self.state, EX["idle"])[6]
+        anim = EX.get(self.cur(), EX["idle"])[6]
         dx = dy = rot = 0.0
         sx = sy = 1.0
         if self.calm:
@@ -180,6 +247,13 @@ class DripWidget(QWidget):
         elif anim == "hop": dy = -22 * abs(math.sin(t * 3.5))
         elif anim == "shake": dx, rot = math.sin(t * 52) * 5, math.sin(t * 52) * 3
         elif anim == "sleep": dy = math.sin(t * 1.6) * 3
+        elif anim == "stretch": dy, sy, sx = -4 * math.sin(t * 2), 1 + 0.08 * math.sin(t * 2), 1 - 0.04 * math.sin(t * 2)
+        elif anim == "dance": dx, rot, dy = math.sin(t * 6) * 8, math.sin(t * 6) * 8, -abs(math.sin(t * 6)) * 10
+        elif anim == "sway": rot, dx = math.sin(t * 3) * 7, math.sin(t * 3) * 5
+        elif anim == "wiggle": rot = math.sin(t * 14) * 5
+        if time.time() < self.spin_until and not self.calm:
+            rot = (1 - (self.spin_until - time.time()) / 0.9) * 360
+        sx, sy = sx * (1 + 0.4 * self.squash), sy * (1 - 0.4 * self.squash)
         left = (self.width() - self.bw) / 2
         base_y = self.BUBBLE_H
         p.setPen(Qt.PenStyle.NoPen)                          # ground shadow
@@ -199,6 +273,12 @@ class DripWidget(QWidget):
             off = (self.look[0] * 0.04 * self.bw, self.look[1] * 0.035 * self.bw) if n.startswith("pupil") else (0, 0)
             self._draw(p, n, off)
         p.resetTransform()
+        for q in self.parts:
+            col = QColor(q["c"])
+            col.setAlphaF(max(0.0, min(1.0, q["life"])))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(col)
+            p.drawEllipse(QRectF(q["x"], q["y"], q["s"], q["s"] * 1.25))
         if self.say_text:
             self._bubble(p)
         p.end()
@@ -254,9 +334,32 @@ class DripWidget(QWidget):
             if time.time() - self.last_move[0] > 0.1:
                 self.vx = self.vy = 0
             self.falling = True
+            now = time.time()
+            self.throws = [t for t in self.throws if now - t < 6] + [now]
+            if len(self.throws) >= 3:
+                self.throws = []
+                self.flash("dizzy", 2600, "I am dizzy… stop throwing me!")
             self.thrown.emit()
         else:
-            self.tapped.emit()
+            now = time.time()
+            self.taps = [t for t in self.taps if now - t < 1.4] + [now]
+            if len(self.taps) >= 5:
+                self.taps = []
+                self.flash("dizzy", 2500, "Whoa, too many taps!")
+                self.burst(8)
+            elif len(self.taps) >= 3:
+                self.flash("giggle", 1600, "Hehe, that tickles!")
+                self.burst(10, True)
+            else:
+                self.burst(6)
+                self.tapped.emit()
+
+    def enterEvent(self, e):  # noqa: N802
+        now = time.time()
+        if self.state == "idle" and not self.calm and now - self.last_hover > 12:
+            self.last_hover = now
+            self.flash("wave", 1700)
+        super().enterEvent(e)
 
     def settle(self, x, y):
         """Place Drip at the bottom right (used on resize); keeps it inside the window."""

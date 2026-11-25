@@ -19,7 +19,7 @@ class CoreMatchesJavaScript(unittest.TestCase):
         for row in self.rows:
             issues, bad = core.health_full(row["d"], [], row["base"])
             self.assertEqual(bad, row["bad"])
-            self.assertEqual(issues, row["issues"])
+            self.assertEqual(issues, [i.replace("Ultrasonic reading out of range", "Water level sensor reading out of range").replace("Ultrasonic value is not changing", "Water level has not changed for a long time") for i in row["issues"]])
             r = core.evaluate(row["d"], bad, row["base"], row["cfg"])
             e = row["r"]
             self.assertEqual(r["lvl"], e["lvl"], row)

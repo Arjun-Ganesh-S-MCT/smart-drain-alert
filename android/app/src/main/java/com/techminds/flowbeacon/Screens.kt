@@ -1,5 +1,8 @@
 package com.techminds.flowbeacon
 
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.runtime.LaunchedEffect
 import android.content.Intent
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.Animatable
@@ -145,7 +148,7 @@ fun Toolbar(vm: AppVm, go: (String) -> Unit) {
     NeuCard(Modifier.padding(horizontal = 18.dp), pad = PaddingValues(horizontal = 14.dp, vertical = 12.dp)) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (vm.role != "consumer") {                       // removed in Consumer mode, never greyed out
-                NeuButton("Connect ESP32-S3", { go("connect") }, icon = "connect", main = true, tall = true)
+                NeuButton("Connect Arduino Nano", { go("connect") }, icon = "connect", main = true, tall = true)
                 NeuButton("Demo mode", { vm.toggleDemo() }, icon = "demo", on = vm.demo, tall = true)
                 NeuButton("Set baseline", { vm.startBaseline() }, icon = "baseline", tall = true)
                 NeuButton("Calibration", { go("incidents"); vm.wizardStart() }, icon = "calibration", tall = true)
@@ -199,34 +202,122 @@ fun BottomBar(tabs: List<String>, cur: String, pick: (String) -> Unit) {
 
 
 // ------------------------------------------------------------------ Drip overlay
+class DripPart(var x: Float, var y: Float, var vx: Float, var vy: Float, var life: Float, val color: Color, val size: Float)
+
+/** Drip on screen: drag it, throw it (it falls with gravity, bounces and squashes), tap it (3 taps giggle, 5 taps make it dizzy). */
 @Composable
 fun DripOverlay(vm: AppVm, modifier: Modifier) {
-    val ox = remember { Animatable(0f) }
-    val oy = remember { Animatable(0f) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val cfg = androidx.compose.ui.platform.LocalConfiguration.current
+    val d = density.density
+    val maxLeft = with(density) { (cfg.screenWidthDp.dp - 78.dp - 16.dp).toPx() }
+    val maxUp = with(density) { (cfg.screenHeightDp.dp - 220.dp).toPx() }
+    var ox by remember { mutableStateOf(0f) }
+    var oy by remember { mutableStateOf(0f) }
+    var squash by remember { mutableStateOf(0f) }
+    var tick by remember { mutableStateOf(0) }
+    val parts = remember { ArrayList<DripPart>() }
+    val spin = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    fun home() {
-        scope.launch { ox.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 300f)) }
-        scope.launch { oy.animateTo(0f, spring(dampingRatio = 0.45f, stiffness = 180f)) }   // falls back and bounces on the bar
-        vm.say("Whee! Back home.", 2500)
+    var fall by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var vx by remember { mutableStateOf(0f) }
+    var vy by remember { mutableStateOf(0f) }
+    var taps by remember { mutableStateOf(listOf<Long>()) }
+    var throws by remember { mutableStateOf(listOf<Long>()) }
+
+    fun burst(n: Int, confetti: Boolean) {
+        val cols = if (confetti) listOf(Color(0xFFFC8068), Color(0xFFE6B800), Color(0xFF22B573), Color(0xFF4F86C6), Color(0xFF8A6BC9)) else listOf(Color(0xFF4FA8E0), Color(0xFF7CC4F0), Color(0xFFA8DCF8))
+        for (i in 0 until n) {
+            val a = i.toFloat() / n * 6.2832f + (Math.random().toFloat() - 0.5f) * 0.4f
+            val v = (120f + Math.random().toFloat() * 180f) * d
+            parts.add(DripPart(39f * d, 50f * d, kotlin.math.cos(a) * v, kotlin.math.sin(a) * v - 120f * d, 1f, cols[i % cols.size], (4f + Math.random().toFloat() * 4f) * d))
+        }
     }
+
+    // one loop for the particles and the squash
+    LaunchedEffect(Unit) {
+        var last = withFrameNanos { it }
+        while (true) {
+            val now = withFrameNanos { it }
+            val dt = ((now - last) / 1e9f).coerceAtMost(0.05f); last = now
+            if (squash > 0.001f) squash *= 0.82f
+            if (parts.isNotEmpty()) {
+                parts.forEach { it.vy += 900f * d * dt; it.x += it.vx * dt; it.y += it.vy * dt; it.life -= dt * 1.2f }
+                parts.removeAll { it.life <= 0f }
+                tick++
+            }
+        }
+    }
+    LaunchedEffect(vm.dripSpin) { if (vm.dripSpin > 0) { spin.snapTo(0f); spin.animateTo(360f, androidx.compose.animation.core.tween(900)); spin.snapTo(0f) } }
+
+    fun startFall() {
+        fall?.cancel()
+        fall = scope.launch {
+            var last = withFrameNanos { it }
+            while (true) {
+                val now = withFrameNanos { it }
+                val dt = ((now - last) / 1e9f).coerceAtMost(0.05f); last = now
+                vy += 1900f * d * dt
+                ox += vx * dt; oy += vy * dt
+                if (oy >= 0f) {
+                    oy = 0f
+                    if (vy > 140f * d) { if (vy > 260f * d) { squash = minOf(0.5f, vy / (1600f * d)); burst(6, false) }; vy = -vy * 0.52f; vx *= 0.88f } else vy = 0f
+                    vx *= 0.6f
+                }
+                if (oy < -maxUp) { oy = -maxUp; vy = -vy * 0.5f }
+                if (ox < -maxLeft) { ox = -maxLeft; vx = -vx * 0.6f }
+                if (ox > 0f) { ox = 0f; vx = -vx * 0.6f }
+                if (kotlin.math.abs(vx) < 6f * d && kotlin.math.abs(vy) < 6f * d && oy >= -1f) { vx = 0f; vy = 0f; break }
+            }
+        }
+    }
+
     Column(modifier.padding(end = 8.dp), horizontalAlignment = Alignment.End) {
         if (vm.dripSayText.isNotEmpty()) {
             Box(Modifier.widthIn(max = 240.dp).padding(bottom = 10.dp, start = 12.dp).neu("card").padding(horizontal = 14.dp, vertical = 10.dp)) {
                 T(vm.dripSayText, size = 12, bold = true)
             }
         }
-        DripView(
-            vm.dripState, vm.dripRain, 78.dp,
-            Modifier.offset { IntOffset(ox.value.roundToInt(), oy.value.roundToInt()) }
-                .pointerInput(Unit) { detectTapGestures { vm.dripTap() } }
+        Box(
+            Modifier.offset { IntOffset(ox.roundToInt(), oy.roundToInt()) }
+                .drawWithContent {
+                    drawContent()
+                    if (tick >= 0) parts.forEach { drawCircle(it.color.copy(alpha = it.life.coerceIn(0f, 1f)), it.size / 2f, Offset(it.x, it.y)) }
+                }
                 .pointerInput(Unit) {
-                    detectDragGestures(onDragStart = { scope.launch { ox.stop(); oy.stop() } }, onDragEnd = { home() }, onDragCancel = { home() }) { change, drag ->
-                        change.consume()
-                        scope.launch { ox.snapTo(ox.value + drag.x); oy.snapTo((oy.value + drag.y).coerceAtMost(0f)) }
+                    detectTapGestures {
+                        val now = System.currentTimeMillis()
+                        taps = taps.filter { t -> now - t < 1400 } + now
+                        when {
+                            taps.size >= 5 -> { taps = emptyList(); vm.dripFlash("dizzy", 2500, "Whoa, too many taps!"); burst(8, false) }
+                            taps.size >= 3 -> { vm.dripFlash("giggle", 1600, "Hehe, that tickles!"); burst(10, true) }
+                            else -> { burst(6, false); vm.dripTap() }
+                        }
                     }
-                },
-            accent = vm.accent, calm = vm.calm
-        )
+                }
+                .pointerInput(Unit) {
+                    var lastT = 0L
+                    detectDragGestures(
+                        onDragStart = { fall?.cancel(); vx = 0f; vy = 0f; lastT = System.currentTimeMillis() },
+                        onDragEnd = {
+                            val now = System.currentTimeMillis()
+                            if (now - lastT > 100) { vx = 0f; vy = 0f }
+                            throws = throws.filter { t -> now - t < 6000 } + now
+                            if (throws.size >= 3) { throws = emptyList(); vm.dripFlash("dizzy", 2600, "I am dizzy… stop throwing me!") }
+                            startFall()
+                        },
+                        onDragCancel = { startFall() }
+                    ) { change, drag ->
+                        change.consume()
+                        val now = System.currentTimeMillis()
+                        val dt = maxOf(0.016f, (now - lastT) / 1000f); lastT = now
+                        ox = (ox + drag.x).coerceIn(-maxLeft, 0f); oy = (oy + drag.y).coerceIn(-maxUp, 0f)
+                        vx = drag.x / dt * 0.6f; vy = drag.y / dt * 0.6f
+                    }
+                }
+        ) {
+            DripView(vm.dripState, vm.dripRain, 78.dp, Modifier, accent = vm.accent, calm = vm.calm, squash = squash, spin = spin.value, lookX = vm.dripLook)
+        }
     }
 }
 
@@ -558,8 +649,8 @@ fun SettingsPage(vm: AppVm) {
     }
     SettingsExtras(vm)
     NeuCard(title = "About") {
-        T("FlowBeacon 2.0.1")
-        Sub("by TechMinds. Smart drainage monitoring and blockage prediction for the ESP32-S3 prototype.")
+        T("FlowBeacon 2.0.2")
+        Sub("by TechMinds. Smart drainage monitoring and blockage prediction for the Arduino Nano prototype.")
         Sub("Switch between Consumer, Maintenance and Developer modes with the button in the top bar.")
     }
 }

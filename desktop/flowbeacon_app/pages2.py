@@ -136,55 +136,7 @@ class History(Page):
 
 
 # ---------------------------------------------------------------- City map
-class MapCanvas(QWidget):
-    picked = Signal(str)
-
-    def __init__(self):
-        super().__init__()
-        self.setMinimumHeight(340)
-        self.states, self.sel, self.pos = [], None, {}
-
-    def set_states(self, states, sel):
-        self.states, self.sel = states, sel
-        self.update()
-
-    def paintEvent(self, _e):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        w, h = self.width(), self.height()
-        p.setPen(QPen(THEME.c("sd"), 1))
-        for i in range(1, 8):                                  # plain grid instead of map tiles (works offline)
-            p.drawLine(QPointF(w * i / 8, 0), QPointF(w * i / 8, h))
-            p.drawLine(QPointF(0, h * i / 6), QPointF(w, h * i / 6))
-        self.pos = citymap.CityBook.project(self.states, w, h)
-        if not self.states:
-            p.setPen(THEME.c("mu"))
-            p.setFont(font(12))
-            p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, tr("No drains to show yet."))
-        for s in self.states:
-            x, y = self.pos[s["id"]]
-            col = QColor(citymap.STAT_COLOR[s["status"]])
-            if s["id"] == self.sel:
-                p.setPen(QPen(THEME.c("ac"), 3))
-                p.setBrush(Qt.BrushStyle.NoBrush)
-                p.drawEllipse(QPointF(x, y), 17, 17)
-            p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(col)
-            p.drawEllipse(QPointF(x, y), 11, 11)
-            p.setPen(THEME.c("tx"))
-            p.setFont(font(11, True))
-            p.drawText(QRectF(x - 80, y + 14, 160, 16), Qt.AlignmentFlag.AlignHCenter, CityMapPage.label(s))
-        p.end()
-
-    def mousePressEvent(self, e):
-        pt = e.position()
-        best = None
-        for sid, (x, y) in self.pos.items():
-            d = (x - pt.x()) ** 2 + (y - pt.y()) ** 2
-            if d < 24 ** 2 and (best is None or d < best[0]):
-                best = (d, sid)
-        if best:
-            self.picked.emit(best[1])
+from .tilemap import TileMap as MapCanvas  # noqa: E402  (OpenStreetMap tiles, drag and zoom)
 
 
 class CityMapPage(Page):
@@ -223,7 +175,12 @@ class CityMapPage(Page):
         ins.box.addWidget(self.canvas)
         c.box.addWidget(ins)
         c.box.addWidget(self.summary)
-        c.box.addWidget(sub("A schematic map: pins are placed from each drain's latitude and longitude, so it works without internet."))
+        zb, zo, zf = NeuButton("Zoom in"), NeuButton("Zoom out"), NeuButton("Fit all drains")
+        zb.clicked.connect(lambda: self.canvas.zoom_by(1))
+        zo.clicked.connect(lambda: self.canvas.zoom_by(-1))
+        zf.clicked.connect(self.canvas.fit)
+        c.box.addLayout(hbox(zb, zo, zf, None))
+        c.box.addWidget(sub("Map from OpenStreetMap (free). Drag to move, scroll to zoom. Tiles you have seen are saved on this computer, so they still show offline."))
         bl.addWidget(c)
         # selected drain
         self.side = NeuCard("Selected drain")

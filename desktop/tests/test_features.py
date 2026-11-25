@@ -6,7 +6,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from flowbeacon_app import citymap, history, ml, quiet, tamil, updater  # noqa: E402
+from flowbeacon_app import citymap, history, ml, quiet, tamil, tiles, updater  # noqa: E402
 
 BASE = {"flow": 4.2, "dist": 12.5, "turb": 850, "sf": 0.2, "sd": 0.2, "st": 30}
 
@@ -107,7 +107,27 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(tamil.trans("Sound", "en"), "Sound")
         self.assertNotEqual(tamil.trans("Sound", "ta"), "Sound")
         self.assertGreater(updater.cmp("2.1.0", "2.0.9"), 0)
-        self.assertEqual(updater.cmp("2.0.1", "2.0.1"), 0)
+        self.assertEqual(updater.cmp("2.0.2", "2.0.2"), 0)
+
+
+class TilesTest(unittest.TestCase):
+    def test_round_trip_and_fit(self):
+        x, y = tiles.world(13.0827, 80.2707, 12)
+        lat, lng = tiles.unworld(x, y, 12)
+        self.assertAlmostEqual(lat, 13.0827, 4)
+        self.assertAlmostEqual(lng, 80.2707, 4)
+        self.assertEqual(tiles.world(0, 0, 1), (1.0, 1.0))
+        z, la, lo = tiles.fit_zoom([(13.04, 80.21), (13.09, 80.27)], 800, 400)
+        self.assertTrue(10 <= z <= 14)
+        self.assertEqual(tiles.fit_zoom([], 800, 400)[0], 12)
+
+    def test_level_sensor(self):
+        from flowbeacon_app import core
+        self.assertEqual(core.level5(18), 0)
+        self.assertEqual(core.level5(3), 5)
+        self.assertEqual(core.dist_from_lv(2), 12.0)
+        d = core.normalize({"flow": 1, "lv": 3, "turb": 800, "rain": 0})
+        self.assertEqual(d["dist"], 9.0)
 
 
 if __name__ == "__main__":

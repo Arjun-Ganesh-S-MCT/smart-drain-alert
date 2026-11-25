@@ -33,14 +33,22 @@ object Core {
 
     private fun f(fmt: String, vararg a: Any) = String.format(Locale.US, fmt, *a)
 
+    // The water level comes from a 5-step sensor (five probes, each with a transistor). The Arduino reports how many are wet
+    // ("lv", 0 to 5); the app turns that into a distance from the sensor top so the rest of the logic is unchanged.
+    const val EMPTY_CM = 18.0       // distance when no probe is wet (keep the same as EMPTY_CM in the firmware)
+    const val STEP_CM = 3.0         // height between two probes
+    fun level5(dist: Double): Int = Math.round((EMPTY_CM - dist) / STEP_CM).toInt().coerceIn(0, 5)
+    fun distFromLv(lv: Int): Double = EMPTY_CM - lv.coerceIn(0, 5) * STEP_CM
+    fun q5(dist: Double): Double = distFromLv(level5(dist))
+
     fun health(d: Reading, hist: List<Sample>, base: Base?): Health {
         val r = hist.takeLast(20)
         val issues = ArrayList<String>()
         val bad = d.dist <= 0 || d.dist > 600
-        if (bad) issues.add("Ultrasonic reading out of range, check wiring")
+        if (bad) issues.add("Water level sensor reading out of range, check wiring")
         if (d.turb <= 0 || d.turb >= 4095) issues.add("Turbidity reading at its limit")
         if (r.size >= 20) {
-            if (r.all { it.l == d.dist }) issues.add("Ultrasonic value is not changing")
+            if (r.all { it.l == d.dist }) issues.add("Water level has not changed for a long time")
             if (d.flow > 0 && r.all { it.f == d.flow }) issues.add("Flow value is frozen")
         }
         if (base != null && d.flow == 0.0) issues.add("Flow is 0: blockage or sensor fault")
@@ -154,7 +162,7 @@ object DripChat {
         "Turbidity is cloudiness. More particles in the water means a higher reading.",
         "Clearing drains before the monsoon prevents most street flooding."
     )
-    const val HELP = "Ask me: status, why, when will it overflow, or what turbidity, flow, calibration, SMS or Wi-Fi mean. " +
+    const val HELP = "Ask me: status, why, when will it overflow, or what turbidity, flow, the water level, calibration or SMS mean. " +
         "I can also set the baseline, start the demo, mute or acknowledge an alarm."
 
     fun line(state: String): String? = lines[state]?.replace("{d}", "the drain")
@@ -183,11 +191,11 @@ object DripChat {
         if (has("(when|will).*(overflow|flood|full)|predict|\\beta\\b"))
             return Reply(if (c.pred.isNotEmpty()) c.pred else "No overflow is predicted right now.")
         if (has("turbidity|cloudy")) return Reply("Turbidity is how cloudy the water is. More silt or mud gives a higher reading, which can support a blockage estimate.")
-        if (has("ultrasonic|distance|level")) return Reply("The ultrasonic sensor measures the distance to the water surface. As the water rises, the distance gets smaller.")
+        if (has("ultrasonic|distance|level|probe|sensor")) return Reply("The water level sensor has five probes at different heights, each with a transistor. The level is how many probes are wet, from 0 to 5. More wet probes means higher water.", null)
         if (has("\\bflow\\b")) return Reply("The flow sensor counts pulses. Flow falling while the water level rises is the classic blockage sign.")
         if (has("calibrat")) return Reply("Calibration teaches the app what normal looks like. Use the wizard under Calibration, then tune the sliders.")
         if (has("\\b(sms|text message)\\b")) return Reply("SMS needs a GSM module on the board. Add your number under Connection and press Send test SMS.")
-        if (has("wi-?fi")) return Reply("Enter the board's address under Connection and press Connect. The board must be on the same Wi-Fi as this phone.")
+        if (has("wi-?fi|usb|cable|connect")) return Reply("The Arduino Nano connects with a USB cable. Plug it into the phone with an OTG cable, tap Find board and then Connect.", null)
         if (has("\\brain\\b")) return Reply("The rain plate only knows wet or dry. It cannot measure how hard it rains.")
         if (has("\\btip\\b|\\bfact\\b|did you know")) return Reply(tips.random())
         if (has("who are you|your name|about you|what are you")) return Reply("I am Drip, the FlowBeacon assistant. I watch your drains and tell you what changes.")

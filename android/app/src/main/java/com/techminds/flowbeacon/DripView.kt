@@ -42,12 +42,20 @@ val DRIP_LOOKS = mapOf(
     "think" to DripLook('o', null, "mouth_sleep", "arm_left", "arm_right", emptyList(), "float"),
     "sleep" to DripLook('c', null, "mouth_sleep", "arm_left", "arm_right", listOf("zzz"), "sleep"),
     "dizzy" to DripLook('o', "brows_worried", "mouth_worried", "arm_left", "arm_right", listOf("stars"), "tilt"),
-    "cheer" to DripLook('c', "brows_up", "mouth_open", "arm_up2", "arm_up", listOf("tick"), "bounce")
+    "cheer" to DripLook('c', "brows_up", "mouth_open", "arm_up2", "arm_up", listOf("tick"), "bounce"),
+    // moods of its own, used when nothing is wrong (same as the web app)
+    "yawn" to DripLook('c', null, "mouth_open", "arm_up2", "arm_up", emptyList(), "stretch"),
+    "dance" to DripLook('c', null, "mouth_open", "arm_up2", "arm_up", emptyList(), "dance"),
+    "sing" to DripLook('c', null, "mouth_open", "arm_left", "arm_right", emptyList(), "sway"),
+    "giggle" to DripLook('c', null, "mouth_smile", "arm_left", "arm_right", emptyList(), "wiggle"),
+    "gasp" to DripLook('o', "brows_up", "mouth_scream", "arm_up2", "arm_up", emptyList(), "hop"),
+    "grumpy" to DripLook('o', "brows_angry", "mouth_worried", "arm_left", "arm_right", emptyList(), "shiver")
 )
 
 /** Drip, built from the original layered PNGs. [width] is the body width; the view is as tall as the body. */
 @Composable
-fun DripView(state: String, rain: Boolean, width: Dp, modifier: Modifier = Modifier, accent: String = "coral", calm: Boolean = false) {
+fun DripView(state: String, rain: Boolean, width: Dp, modifier: Modifier = Modifier, accent: String = "coral", calm: Boolean = false,
+             squash: Float = 0f, spin: Float = 0f, lookX: Float = 0f) {
     val look = DRIP_LOOKS[state] ?: DRIP_LOOKS.getValue("idle")
     val tint = remember(accent) { tintFilter(accent) }
     val bodyH = width * (DripData.BODY_H / DripData.BODY_W)
@@ -59,7 +67,7 @@ fun DripView(state: String, rain: Boolean, width: Dp, modifier: Modifier = Modif
     }
     val s = sin(t * 2 * PI).toFloat()
     val k = width.value / 150f
-    var dx = 0f; var dy = 0f; var rot = 0f
+    var dx = 0f; var dy = 0f; var rot = 0f; var sx = 1f; var sy = 1f
     when (if (calm) "" else look.anim) {
         "float" -> dy = s * 3f
         "bounce" -> dy = -abs(s) * 12f
@@ -68,6 +76,10 @@ fun DripView(state: String, rain: Boolean, width: Dp, modifier: Modifier = Modif
         "hop" -> dy = -abs(sin(t * 2 * PI * 2)).toFloat() * 14f
         "shake" -> { val q = sin(t * 2 * PI * 22).toFloat(); dx = q * 3f; rot = q * 3f }
         "sleep" -> dy = s * 2f
+        "stretch" -> { dy = -s * 4f; sy = 1f + 0.08f * s; sx = 1f - 0.04f * s }
+        "dance" -> { val q = sin(t * 2 * PI * 4).toFloat(); dx = q * 8f; rot = q * 8f; dy = -abs(q) * 10f }
+        "sway" -> { val q = sin(t * 2 * PI * 2).toFloat(); rot = q * 7f; dx = q * 5f }
+        "wiggle" -> rot = sin(t * 2 * PI * 9).toFloat() * 5f
     }
     val closed = look.eyes == 'c' || blink
     val arms = listOf(look.left, look.right).toMutableList()
@@ -89,12 +101,18 @@ fun DripView(state: String, rain: Boolean, width: Dp, modifier: Modifier = Modif
         val h = w * (sz.second.toFloat() / sz.first.toFloat())
         val x = width * (p.first / 100f) - w / 2
         val y = bodyH * (p.second / 100f) - h / 2
-        var m: Modifier = Modifier.offset(x, y).size(w, h)
+        val lk = if (name == "pupil_l" || name == "pupil_r") (lookX * 3f).dp else 0.dp
+        var m: Modifier = Modifier.offset(x + lk, y).size(w, h)
         if (name == "arm_up2") m = m.graphicsLayer(scaleX = -1f)
         Image(painterResource(res), null, m, colorFilter = if (name in TINTED) tint else null)
     }
 
-    Box(modifier.size(width, bodyH).offset((dx * k).dp, (dy * k).dp).rotate(rot)) {
+    Box(
+        modifier.size(width, bodyH).offset((dx * k).dp, (dy * k).dp).graphicsLayer(
+            scaleX = sx * (1f + 0.4f * squash), scaleY = sy * (1f - 0.4f * squash), rotationZ = rot + spin,
+            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+        )
+    ) {
         arms.forEach { Layer(it) }
         Image(painterResource(DripData.RES.getValue("body")), null, Modifier.size(width, bodyH), colorFilter = tint)
         others.forEach { Layer(it) }

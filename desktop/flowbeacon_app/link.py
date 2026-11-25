@@ -1,9 +1,11 @@
-"""Talks to the ESP32-S3: USB serial, Wi-Fi WebSocket (port 81) and a built-in demo generator."""
+"""Talks to the Arduino Nano: USB serial (Wi-Fi WebSocket only if you add a bridge) and a built-in demo generator."""
 import json
 import random
 import time
 
 from PySide6.QtCore import QIODevice, QObject, QTimer, QUrl, Signal
+
+from . import core
 
 try:
     from PySide6.QtSerialPort import QSerialPort, QSerialPortInfo
@@ -65,9 +67,10 @@ class Link(QObject):
         self.tick += 1
         p = SCEN["normal" if self.cal_pending else self.scen]
         n = lambda: random.random() - 0.5  # noqa: E731
-        self.data.emit({"flow": p[0] + n() * 0.2, "dist": p[1] + n() * 0.2, "turb": p[2] + n() * 30, "rain": p[3]})
+        q = lambda x: core.dist_from_lv(core.level5(x))  # noqa: E731 - the sensor only has 5 steps
+        self.data.emit({"flow": p[0] + n() * 0.2, "dist": q(p[1] + n() * 0.2), "turb": p[2] + n() * 30, "rain": p[3]})
         for nid, fl, di, tu in DEMO_EXTRA:           # two more drains, so the city map has something to show
-            self.data.emit({"node": nid, "flow": fl + n() * 0.2, "dist": di + n() * 0.2, "turb": tu + n() * 30, "rain": 0})
+            self.data.emit({"node": nid, "flow": fl + n() * 0.2, "dist": q(di + n() * 0.2), "turb": tu + n() * 30, "rain": 0})
 
     # ---- replay of a recorded CSV ----
     def start_replay(self, rows, speed):
@@ -147,7 +150,7 @@ class Link(QObject):
         sp.readyRead.connect(self._on_serial)
         sp.errorOccurred.connect(self._on_serial_error)
         self._set(True, "Connected (USB)")
-        self.message.emit("Reading from the ESP32-S3…")
+        self.message.emit("Reading from the Arduino Nano…")
 
     def _on_serial(self):
         self._buf += bytes(self.serial.readAll()).decode("utf8", "replace")
@@ -213,4 +216,4 @@ class Link(QObject):
         elif d.get("wifi") == "failed":
             self.wifi_failed.emit()
         elif "flow" in d:
-            self.data.emit(d)
+            self.data.emit(core.normalize(d))

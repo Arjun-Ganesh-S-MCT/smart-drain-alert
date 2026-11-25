@@ -13,7 +13,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.hoho.android.usbserial.util.SerialInputOutputManager
 
-/** USB serial link to the ESP32-S3 (USB OTG cable). Lines arrive through [onLine] on a background thread. */
+/** USB serial link to the Arduino Nano (USB OTG cable). Lines arrive through [onLine] on a background thread. */
 class UsbLink(private val ctx: Context, private val onLine: (String) -> Unit, private val onState: (Boolean, String) -> Unit) {
     private val usb = ctx.getSystemService(Context.USB_SERVICE) as UsbManager
     private var port: UsbSerialPort? = null

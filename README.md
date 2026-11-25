@@ -35,6 +35,12 @@ Both apps have every tab of the web app: Overview, Drain model, Incidents, Conne
 - Desktop: tray icon, desktop notifications, close to tray, start with the computer.
 - Android: background alerts (foreground service plus notifications) and USB serial through an OTG cable.
 
+## Hardware (this version)
+
+- Board: **Arduino Nano** (USB only, no Wi-Fi). Sketch and wiring: `firmware/README.md`.
+- Water level: a **5-step sensor** (five probes, each through a transistor) instead of the ultrasonic sensor. The Nano sends `lv` (0 to 5) and the app turns it into a distance (`EMPTY_CM` and `STEP_CM` in `core.py` and `Core.kt`).
+- Map: **OpenStreetMap tiles** drawn by the apps themselves (no web view), with drag, zoom and pins. Tiles are cached on the device.
+
 ## Windows installer
 
 Windows is delivered as an `.msi` only: `cd desktop && pip install -r requirements-msi.txt && python build_msi.py` (on Windows), or take it from the `FlowBeacon-Windows-msi` artifact of the GitHub workflow.

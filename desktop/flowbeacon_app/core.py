@@ -17,18 +17,39 @@ def conf(c):
             "over": c["over"], "tb": c["turb"] / 100}
 
 
+# The water level comes from a 5-step sensor (five probes, each with a transistor). The Arduino reports how many are wet
+# ("lv", 0 to 5); the app turns that into a distance from the sensor top so the rest of the logic is unchanged.
+EMPTY_CM = 18.0     # distance when no probe is wet (keep the same as EMPTY_CM in the firmware)
+STEP_CM = 3.0       # height between two probes
+
+
+def level5(dist):
+    return max(0, min(5, int(round((EMPTY_CM - dist) / STEP_CM))))
+
+
+def dist_from_lv(lv):
+    return EMPTY_CM - max(0, min(5, int(lv))) * STEP_CM
+
+
+def normalize(d):
+    """Makes sure a reading has a distance. A reading from the Nano has "lv" (0 to 5) and may have no "dist"."""
+    if "dist" not in d and "lv" in d:
+        d["dist"] = dist_from_lv(d["lv"])
+    return d
+
+
 def health(d, hist):
     """hist: list of dicts with t (ms), f (flow), l (dist). Returns (issues, bad)."""
     r = hist[-20:]
     issues = []
     bad = d["dist"] <= 0 or d["dist"] > 600
     if bad:
-        issues.append("Ultrasonic reading out of range, check wiring")
+        issues.append("Water level sensor reading out of range, check wiring")
     if d["turb"] <= 0 or d["turb"] >= 4095:
         issues.append("Turbidity reading at its limit")
     if len(r) >= 20:
         if all(q["l"] == d["dist"] for q in r):
-            issues.append("Ultrasonic value is not changing")
+            issues.append("Water level has not changed for a long time")
         if d["flow"] > 0 and all(q["f"] == d["flow"] for q in r):
             issues.append("Flow value is frozen")
     return issues, bad

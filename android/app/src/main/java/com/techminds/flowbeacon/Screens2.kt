@@ -147,42 +147,6 @@ fun HistoryPage(vm: AppVm) {
 }
 
 // ------------------------------------------------------------------ City map
-private fun project(states: List<DevState>, w: Float, h: Float, pad: Float = 40f): Map<String, Offset> {
-    if (states.isEmpty()) return emptyMap()
-    val la = states.map { it.dv.lat }; val lo = states.map { it.dv.lng }
-    val dla = maxOf(la.max() - la.min(), 0.004); val dlo = maxOf(lo.max() - lo.min(), 0.004)
-    val sc = minOf((w - 2 * pad) / dlo, (h - 2 * pad) / dla)
-    val cx = (lo.min() + lo.max()) / 2; val cy = (la.min() + la.max()) / 2
-    return states.associate { it.id to Offset((w / 2 + (it.dv.lng - cx) * sc).toFloat(), (h / 2 - (it.dv.lat - cy) * sc).toFloat()) }
-}
-
-@Composable
-fun MapCanvas(states: List<DevState>, sel: String?, label: (DevState) -> String, onPick: (String) -> Unit) {
-    val sd = FB.SD; val ac = FB.AC; val tx = FB.TX
-    val paint = remember { Paint().apply { isAntiAlias = true; textAlign = Paint.Align.CENTER } }
-    Canvas(
-        Modifier.fillMaxWidth().height(300.dp).pointerInput(states) {
-            detectTapGestures { o ->
-                val pos = project(states, size.width.toFloat(), size.height.toFloat())
-                val best = pos.minByOrNull { (it.value - o).getDistance() }
-                if (best != null && (best.value - o).getDistance() < 48.dp.toPx()) onPick(best.key)
-            }
-        }
-    ) {
-        val w = size.width; val h = size.height
-        for (i in 1..7) drawLine(sd, Offset(w * i / 8, 0f), Offset(w * i / 8, h), 1f)       // a plain grid instead of map tiles: works offline
-        for (i in 1..5) drawLine(sd, Offset(0f, h * i / 6), Offset(w, h * i / 6), 1f)
-        val pos = project(states, w, h)
-        paint.color = tx.toArgb(); paint.textSize = 11.dp.toPx()
-        states.forEach { s ->
-            val p = pos[s.id] ?: return@forEach
-            if (s.id == sel) drawCircle(ac, 17.dp.toPx(), p, style = Stroke(3.dp.toPx()))
-            drawCircle(Color(CityBook.STAT_COLOR.getValue(s.status)), 11.dp.toPx(), p)
-            drawContext.canvas.nativeCanvas.drawText(label(s), p.x, p.y + 28.dp.toPx(), paint)
-        }
-    }
-}
-
 @Composable
 fun CityMapPage(vm: AppVm) {
     val city = vm.city
@@ -205,6 +169,7 @@ fun CityMapPage(vm: AppVm) {
     var eLat by rememberSaveable { mutableStateOf("") }
     var eLng by rememberSaveable { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
+    val mapView = remember { MapView() }
     LaunchedEffect(Unit) { while (true) { delay(3000); tick++ } }
 
     if (rev < 0) return                       // reads rev so every action below refreshes the page
@@ -237,9 +202,14 @@ fun CityMapPage(vm: AppVm) {
         NeuSelect(listOf("" to "All wards") + wards.map { it to it }, ward, { ward = it })
         NeuSelect(listOf("" to "All zones") + zones.map { it to it }, zone, { zone = it })
         NeuSelect(listOf("" to "All statuses") + CityBook.STAT.map { it.key to it.value }, stat, { stat = it })
-        Inset(pad = 6.dp) { MapCanvas(st, sel.ifEmpty { null }, { city.label(it) }, { pick(it) }) }
+        Inset(pad = 6.dp) { TileMapView(st, sel.ifEmpty { null }, { city.label(it) }, mapView, { pick(it) }) }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            NeuButton("Zoom in", { mapView.fitted = true; mapView.zoom = (mapView.zoom + 1f).coerceAtMost(18f) })
+            NeuButton("Zoom out", { mapView.fitted = true; mapView.zoom = (mapView.zoom - 1f).coerceAtLeast(2f) })
+            NeuButton("Fit all drains", { mapView.fitted = false })
+        }
         Sub("${st.size} drains · ${st.count { it.online }} online · ${incs.count { it.status != "resolved" }} open incidents")
-        Sub("A schematic map: pins are placed from each drain's latitude and longitude, so it works without internet.")
+        Sub("Map from OpenStreetMap (free). Drag to move, pinch to zoom. Tiles you have seen are saved on the phone, so they still show offline.")
     }
 
     NeuCard(title = "Selected drain") {
@@ -399,7 +369,7 @@ fun SettingsExtras(vm: AppVm) {
 @Composable
 fun UsbCard(vm: AppVm) {
     NeuCard(title = "USB") {
-        Sub("Plug the ESP32-S3 into the phone with a USB OTG cable, then tap Find board. Android asks for permission once.")
+        Sub("Plug the Arduino Nano into the phone with a USB OTG cable, then tap Find board. Android asks for permission once.")
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NeuButton("Find board", { vm.refreshUsb() })
         }

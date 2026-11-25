@@ -16,6 +16,13 @@ EX = {
     "sleep": ("c", None, "mouth_sleep", "arm_left", "arm_right", ["zzz"], "sleep"),
     "dizzy": ("o", "brows_worried", "mouth_worried", "arm_left", "arm_right", ["stars"], "tilt"),
     "cheer": ("c", "brows_up", "mouth_open", "arm_up2", "arm_up", ["tick"], "bounce"),
+    # extra moods used for Drip's own behaviour when nothing is wrong (same as the web app)
+    "yawn": ("c", None, "mouth_open", "arm_up2", "arm_up", [], "stretch"),
+    "dance": ("c", None, "mouth_open", "arm_up2", "arm_up", [], "dance"),
+    "sing": ("c", None, "mouth_open", "arm_left", "arm_right", [], "sway"),
+    "giggle": ("c", None, "mouth_smile", "arm_left", "arm_right", [], "wiggle"),
+    "gasp": ("o", "brows_up", "mouth_scream", "arm_up2", "arm_up", [], "hop"),
+    "grumpy": ("o", "brows_angry", "mouth_worried", "arm_left", "arm_right", [], "shiver"),
 }
 MSG = {
     "curious": "Hmm, flow looks lower than usual.",

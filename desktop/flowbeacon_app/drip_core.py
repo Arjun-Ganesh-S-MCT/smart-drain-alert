@@ -19,7 +19,7 @@ TIPS = [
     "Turbidity is cloudiness. More particles in the water means a higher reading.",
     "Clearing drains before the monsoon prevents most street flooding.",
 ]
-HELP = ("Ask me: status, why, when will it overflow, or what turbidity, flow, calibration, SMS or Wi-Fi mean. "
+HELP = ("Ask me: status, why, when will it overflow, or what turbidity, flow, the water level, calibration or SMS mean. "
         "I can also set the baseline, start the demo, mute or acknowledge an alarm.")
 GREET = ["Hi, I am Drip!", "Watching your drain.", "Tap me any time.", "Need a hand?"]
 
@@ -56,11 +56,11 @@ def reply(text, ctx):
     if has(r"(when|will).*(overflow|flood|full)|predict|\beta\b"):
         return ctx.get("pred") or "No overflow is predicted right now.", None
     if has(r"turbidity|cloudy"): return "Turbidity is how cloudy the water is. More silt or mud gives a higher reading, which can support a blockage estimate.", None
-    if has(r"ultrasonic|distance|level"): return "The ultrasonic sensor measures the distance to the water surface. As the water rises, the distance gets smaller.", None
+    if has(r"ultrasonic|distance|level|probe|sensor"): return "The water level sensor has five probes at different heights, each with a transistor. The level is how many probes are wet, from 0 to 5. More wet probes means higher water.", None
     if has(r"\bflow\b"): return "The flow sensor counts pulses. Flow falling while the water level rises is the classic blockage sign.", None
     if has(r"calibrat"): return "Calibration teaches the app what normal looks like. Use the wizard under Calibration, then tune the dials.", None
     if has(r"\b(sms|text message)\b"): return "SMS needs a GSM module on the board. Add your number and press Send test SMS.", None
-    if has(r"wi-?fi"): return "Connect the board with USB, enter the Wi-Fi name and password under Connection, then press Send to board.", None
+    if has(r"wi-?fi|usb|cable|connect"): return "The Arduino Nano connects with a USB cable. Pick its port under Connection and press Connect.", None
     if has(r"\brain\b"): return "The rain plate only knows wet or dry. It cannot measure how hard it rains.", None
     if has(r"\btip\b|\bfact\b|did you know"): return random.choice(TIPS), None
     if has(r"who are you|your name|about you|what are you"): return "I am Drip, the FlowBeacon assistant. I watch your drains and tell you what changes.", None

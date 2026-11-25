@@ -2,7 +2,7 @@
 import json
 import urllib.request
 
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 REPO = "Arjun-Ganesh-S-MCT/smart-drain-alert"
 
 
