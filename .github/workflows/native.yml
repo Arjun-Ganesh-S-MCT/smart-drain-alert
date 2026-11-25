@@ -24,7 +24,8 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libpulse-mainloop-glib0
       - name: Logic tests
-        run: python -m unittest discover -s tests
+        working-directory: desktop
+        run: python -m unittest discover -s tests -v
       - name: Build
         run: python build_exe.py
       - uses: actions/upload-artifact@v4
