@@ -31,12 +31,16 @@ class Store:
         self.d = {"cfg": dict(DEF), "base": None, "inc": [], "vol": 0.6, "mute": False, "drip": True,
                   "role": "", "ip": "", "ssid": "", "devpw": "", "sms": {"on": False, "nums": "", "min": 3, "cool": 5},
                   "accent": "coral", "mode": "light", "calm": False, "node": "Drain 1",
-                  "snd": {"ui": True, "possible": True, "warning": True, "risk": True, "overflow": True, "rain": True, "predict": True}}
+                  "snd": {"ui": True, "possible": True, "warning": True, "risk": True, "overflow": True, "rain": True, "predict": True},
+                  "lang": "en", "zoom": 1.0, "notify": True, "tray": False, "upd": True,
+                  "quiet": {"on": False, "from": "22:00", "to": "06:00", "smsMin": 3},
+                  "profiles": [], "model": None, "useModel": False, "nodes": {}, "map": {}}
         try:
             self.d.update(json.loads(self.path.read_text(encoding="utf8")))
         except (OSError, ValueError):
             pass
         self.d["cfg"] = {**DEF, **self.d.get("cfg", {})}
+        self.d["quiet"] = {"on": False, "from": "22:00", "to": "06:00", "smsMin": 3, **(self.d.get("quiet") or {})}
         self.d["snd"] = {"ui": True, "possible": True, "warning": True, "risk": True, "overflow": True, "rain": True, "predict": True, **self.d.get("snd", {})}
 
     def __getitem__(self, k):
@@ -48,7 +52,12 @@ class Store:
     def save(self):
         try:
             tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(self.d), encoding="utf8")
+            d = dict(self.d)
+            m = dict(d.get("map") or {})            # demo drains are never saved
+            m["devices"] = {k: v for k, v in (m.get("devices") or {}).items() if not k.startswith("demo-")}
+            m["incidents"] = [i for i in (m.get("incidents") or []) if not str(i.get("dev", "")).startswith("demo-")]
+            d["map"] = m
+            tmp.write_text(json.dumps(d), encoding="utf8")
             tmp.replace(self.path)
         except OSError:
             pass

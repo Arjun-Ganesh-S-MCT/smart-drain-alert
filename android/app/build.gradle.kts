@@ -11,8 +11,8 @@ android {
         applicationId = "com.techminds.flowbeacon"
         minSdk = 21            // Android 5.0 and newer
         targetSdk = 34
-        versionCode = 20
-        versionName = "2.0.0"
+        versionCode = 21
+        versionName = "2.0.1"
         resourceConfigurations += listOf("en")
     }
 
@@ -44,4 +44,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.caverock:androidsvg-aar:1.4")
+    implementation("com.github.mik3y:usb-serial-for-android:3.7.3")
 }

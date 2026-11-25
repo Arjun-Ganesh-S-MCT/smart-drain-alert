@@ -1,12 +1,14 @@
 """Main window: header, toolbar, tab bar and pages, with Drip floating on top (same layout as the web app)."""
+import threading
 import time
 
-from PySide6.QtCore import QPoint, Qt, QTimer
-from PySide6.QtGui import QGuiApplication, QPixmap
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow, QScrollArea, QStackedWidget,
-                               QVBoxLayout, QWidget)
+from PySide6.QtCore import QObject, QPoint, QTimer, Qt, QUrl, Signal
+from PySide6.QtGui import QDesktopServices, QGuiApplication, QIcon, QPixmap
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow, QMenu, QScrollArea, QStackedWidget,
+                               QSystemTrayIcon, QVBoxLayout, QWidget)
 
-from . import drip_core
+from . import drip_core, i18n, pages2, updater
+from .history import History as HistoryDb
 from .controls import ConnChip, NeuButton, NeuCard, NeuSlider, NeuSwitch, Sep, sub
 from .drip_data import MSG
 from .engine import Engine
@@ -15,13 +17,17 @@ from .neu import Canvas
 from .pages import AskDrip, Banner, Calibration, Connection, Console, Incidents, Model, Overview, Settings
 from .role import ROLES, RoleDialog
 from .sound import Sound
-from .store import Store
+from .store import Store, data_dir
 from .theme import ASSETS, THEME, font, qss
 from .widgets import DripWidget
 
 TABS = [("overview", "Overview", "devices"), ("model", "Drain model", "zone"), ("incidents", "Incidents", "blockage"),
-        ("connect", "Connection", "connect"), ("calib", "Calibration", "calibration"), ("drip", "Ask Drip", "team"),
-        ("settings", "Settings", "status"), ("console", "Console", "update")]
+        ("connect", "Connection", "connect"), ("history", "History", "resolved"), ("calib", "Calibration", "calibration"),
+        ("drip", "Ask Drip", "team"), ("settings", "Settings", "status"), ("console", "Console", "update"), ("map", "City map", "map")]
+
+
+class _Upd(QObject):
+    done = Signal(dict)
 
 
 class MainWindow(QMainWindow):
@@ -32,9 +38,17 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(900, 620)
         self.store = Store()
         THEME.accent, THEME.mode = self.store["accent"], self.store["mode"]
+        i18n.set_lang(self.store["lang"])
+        i18n.set_zoom(self.store["zoom"])
         self.sound = Sound(self.store)
         self.link = Link()
-        self.engine = Engine(self.store, self.link, self.sound)
+        self.history = HistoryDb(data_dir() / "history.db")
+        self.history.prune()
+        self.engine = Engine(self.store, self.link, self.sound, self.history)
+        self._quitting, self._tray_told = False, False
+        self._upd = _Upd()
+        self._upd.done.connect(self.on_update_result)
+        self._upd_label, self._upd_manual = None, False
         self.role, self.was_ok, self.current = "consumer", False, "overview"
         self.flash_state, self.flash_until = None, 0.0
         self.cur_drip, self.cur_rain = None, None
@@ -47,6 +61,7 @@ class MainWindow(QMainWindow):
         v.setSpacing(10)
         v.addLayout(self._header())
         v.addWidget(self._toolbar())
+        v.addWidget(self._update_bar())
         v.addLayout(self._tabbar())
         self.banner = Banner()
         self.banner.ack.connect(self.engine.acknowledge)
@@ -55,7 +70,8 @@ class MainWindow(QMainWindow):
         v.addWidget(self.stack, 1)
         self.pages = {}
         for key, cls in (("overview", Overview), ("model", Model), ("incidents", Incidents), ("connect", Connection),
-                         ("calib", Calibration), ("drip", AskDrip), ("settings", Settings), ("console", Console)):
+                         ("history", pages2.History), ("calib", Calibration), ("drip", AskDrip), ("settings", Settings),
+                         ("console", Console), ("map", pages2.CityMapPage)):
             page = cls(self)
             sc = QScrollArea()
             sc.setWidgetResizable(True)
@@ -65,6 +81,12 @@ class MainWindow(QMainWindow):
             self.stack.addWidget(sc)
             self.pages[key] = (page, sc)
         self.pages["drip"][0].action.connect(self.act)
+        pages2.add_learn_cards(self.pages["calib"][0], self)
+        pages2.add_settings_extras(self.pages["settings"][0], self)
+        for kn in self.pages["calib"][0].knobs.values():       # the dials tick and spin like the web app
+            kn.changed.connect(lambda _v, kn=kn: self.sound.knob_tick(kn._frac()))
+            kn.grabbed.connect(self.sound.knob_spin)
+            kn.released.connect(self.sound.knob_stop)
 
         self.drip = DripWidget(root)
         self.drip.tapped.connect(self.drip_tap)
@@ -73,6 +95,9 @@ class MainWindow(QMainWindow):
         self.drip.setVisible(self.store["drip"])
 
         self.engine.say.connect(self.drip.say)
+        self._make_tray()
+        self.engine.notify.connect(self.on_notify)
+        self.engine.city_changed.connect(lambda: None)
         self.engine.flash.connect(self.do_flash)
         self.engine.banner.connect(self.on_banner)
         self.link.connection.connect(self.on_conn)
@@ -90,9 +115,15 @@ class MainWindow(QMainWindow):
         fl = QTimer(self)
         fl.timeout.connect(lambda: self.banner.isVisible() and self.banner.update())
         fl.start(120)
+        fh = QTimer(self)
+        fh.timeout.connect(lambda: self.history.flush_all(60000))
+        fh.start(60000)
         self.restyle()
         self.on_conn(False, "Not connected")
         self.show_tab("overview")
+        i18n.apply(self)
+        if self.store["upd"]:
+            QTimer.singleShot(6000, self.check_updates)
 
     # ---------- layout pieces ----------
     def _header(self):
@@ -204,9 +235,12 @@ class MainWindow(QMainWindow):
         if dlg.exec() and dlg.choice:
             self.set_role(dlg.choice)
 
-    def start(self):
-        self.show()
+    def start(self, hidden=False):
         saved = self.store["role"]
+        if hidden and saved in ("consumer", "team") and self.tray is not None:
+            self.set_role(saved)
+            return
+        self.show()
         if not saved:
             self.set_role("consumer", False)
             dlg = RoleDialog(self.store, self, cancel=False)
@@ -233,6 +267,9 @@ class MainWindow(QMainWindow):
     def toggle_demo(self):
         if self.link.demo:
             self.link.stop_demo()
+            for k in [k for k in self.engine.nodes if k.startswith("demo-")]:
+                del self.engine.nodes[k]
+            self.engine.nodes_changed.emit()
         else:
             self.engine.hist.clear()
             self.engine.last_lvl = 0
@@ -308,3 +345,101 @@ class MainWindow(QMainWindow):
                 x, self._drip_placed = w - self.drip.width() - 6, True
             self.drip.move(int(x), int(h - self.drip.height() + 18))
             self.drip.falling = True
+
+    # ---------- update bar, language, text size ----------
+    def _update_bar(self):
+        self.upd_bar = NeuCard(pad=(18, 10, 18, 10))
+        row = QHBoxLayout()
+        self.upd_text = QLabel("")
+        self.upd_url = ""
+        go, later = NeuButton("Download", main=True), NeuButton("Later")
+        go.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.upd_url)))
+        later.clicked.connect(self.upd_bar.hide)
+        row.addWidget(self.upd_text, 1)
+        row.addWidget(go)
+        row.addWidget(later)
+        self.upd_bar.box.addLayout(row)
+        self.upd_bar.hide()
+        return self.upd_bar
+
+    def check_updates(self, label=None, manual=False):
+        self._upd_label, self._upd_manual = label, manual
+        if label is not None:
+            label.setText(i18n.tr("Checking…"))
+        threading.Thread(target=lambda: self._upd.done.emit(updater.check()), daemon=True).start()
+
+    def on_update_result(self, r):
+        lab = self._upd_label if self._upd_manual else None
+        if r.get("error"):
+            if lab is not None:
+                lab.setText("Could not check: " + r["error"])
+        elif r.get("newer"):
+            self.upd_url = r["url"]
+            self.upd_text.setText("FlowBeacon %s is available (you have %s)." % (r["latest"], r["current"]))
+            self.upd_bar.show()
+            if lab is not None:
+                lab.setText("Version %s is available." % r["latest"])
+        elif lab is not None:
+            lab.setText("You have the latest version (%s)." % r["current"])
+
+    def apply_language(self):
+        i18n.apply(self)
+        for w in self.findChildren(QWidget):
+            w.update()
+        for k in ("history", "map"):
+            pg = self.pages[k][0]
+            (pg.refresh if k == "history" else pg.render)() if pg.isVisible() else None
+
+    def set_language(self, lang):
+        self.store["lang"] = lang
+        self.store.save()
+        i18n.set_lang(lang)
+        self.apply_language()
+
+    def set_zoom(self, z):
+        self.store["zoom"] = float(z)
+        self.store.save()
+        i18n.set_zoom(z)
+        self.apply_language()
+
+    # ---------- tray icon and desktop notifications ----------
+    def _make_tray(self):
+        self.tray = None
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            return
+        self.tray = QSystemTrayIcon(QIcon(str(ASSETS / "icon.png")), self)
+        self.tray_menu = QMenu()
+        self.tray_menu.addAction("Open FlowBeacon").triggered.connect(self.bring_up)
+        self.tray_menu.addAction("Quit").triggered.connect(self.quit_app)
+        self.tray.setContextMenu(self.tray_menu)
+        self.tray.activated.connect(lambda r: self.bring_up() if r == QSystemTrayIcon.ActivationReason.Trigger else None)
+        self.tray.setToolTip("FlowBeacon")
+        self.tray.show()
+
+    def on_notify(self, title, body):
+        if self.tray is not None:
+            self.tray.showMessage(title, body, QSystemTrayIcon.MessageIcon.Warning, 8000)
+
+    def bring_up(self):
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def quit_app(self):
+        self._quitting = True
+        self.close()
+        QApplication.instance().quit()
+
+    def closeEvent(self, e):
+        if self.store["tray"] and self.tray is not None and not self._quitting:
+            e.ignore()
+            self.hide()
+            if not self._tray_told:
+                self._tray_told = True
+                self.tray.showMessage("FlowBeacon", "Still running in the tray. Alerts will keep coming.", QSystemTrayIcon.MessageIcon.Information, 5000)
+            return
+        try:
+            self.history.close()
+        except Exception:  # noqa: BLE001
+            pass
+        e.accept()

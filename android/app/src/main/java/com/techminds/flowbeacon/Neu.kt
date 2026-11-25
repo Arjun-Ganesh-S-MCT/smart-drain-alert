@@ -150,11 +150,24 @@ fun Modifier.neu(kind: String): Modifier {
 }
 
 // ------------------------------------------------------------------ text + icons
+val LocalLang = androidx.compose.runtime.staticCompositionLocalOf { "en" }
+private val UPPER_KEYS: Map<String, String> by lazy { Tamil.TA.mapKeys { it.key.uppercase() } }
+
+/** Tamil text for a UI string (also for upper-case headings); the English text when there is no entry or the language is English. */
+fun trText(s: String, lang: String): String {
+    if (lang != "ta") return s
+    Tamil.TA[s]?.let { return it }
+    UPPER_KEYS[s]?.let { return it.uppercase() }
+    return Tamil.trans(s, lang)
+}
+
 @Composable
 fun T(text: String, modifier: Modifier = Modifier, size: Int = 13, bold: Boolean = false, color: Color = FB.TX, align: TextAlign? = null,
-      spacing: Float = 0f, maxLines: Int = Int.MAX_VALUE) =
-    Text(text, modifier, color = color, fontSize = size.sp, fontFamily = Mono, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+      spacing: Float = 0f, maxLines: Int = Int.MAX_VALUE) {
+    val shown = trText(text, LocalLang.current)
+    Text(shown, modifier, color = color, fontSize = size.sp, fontFamily = Mono, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
         letterSpacing = spacing.sp, textAlign = align, maxLines = maxLines, overflow = TextOverflow.Ellipsis, lineHeight = (size * 1.5f).sp)
+}
 
 @Composable
 fun Sub(text: String, modifier: Modifier = Modifier, color: Color = FB.MU) = T(text, modifier, 12, false, color)
@@ -204,16 +217,19 @@ fun Sep(modifier: Modifier = Modifier) {
 }
 
 // ------------------------------------------------------------------ buttons
+val LocalSound = androidx.compose.runtime.staticCompositionLocalOf<Sound?> { null }
+
 @Composable
 fun NeuButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: String? = null, main: Boolean = false, on: Boolean = false, tall: Boolean = false) {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
+    val snd = LocalSound.current
     val sfx = if (tall) "40" else "36"
     val kind = if (main) "pill$sfx" else if (pressed || on) "pillin$sfx" else "pill$sfx"
     val ac = FB.AC
     Row(
         modifier.height(if (tall) 40.dp else 36.dp).neu(kind).let { if (main) it.background(ac, RoundedCornerShape(50)) else it }
-            .clip(RoundedCornerShape(50)).clickable(src, null) { onClick() }.padding(horizontal = 18.dp),
+            .clip(RoundedCornerShape(50)).clickable(src, null) { snd?.play("click"); onClick() }.padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
     ) {
         if (icon != null) { Ico(icon, if (tall) 20.dp else 18.dp); Box(Modifier.width(8.dp)) }
@@ -223,13 +239,14 @@ fun NeuButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
 
 @Composable
 fun Seg(options: List<Pair<String, String>>, current: String, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
+    val snd = LocalSound.current
     Row(modifier.height(42.dp).neu("seg42").padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         options.forEach { (k, name) ->
             val sel = k == current
             val ac = FB.AC
             Box(
                 Modifier.height(34.dp).let { if (sel) it.neu("segon34").background(ac, RoundedCornerShape(50)) else it }
-                    .clip(RoundedCornerShape(50)).clickable { onPick(k) }.padding(horizontal = 14.dp),
+                    .clip(RoundedCornerShape(50)).clickable { snd?.play("click"); onPick(k) }.padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center
             ) { T(name, size = 12, bold = true, color = if (sel) FB.ON else FB.TX, maxLines = 1) }
         }
@@ -256,9 +273,10 @@ fun NeuField(value: String, onChange: (String) -> Unit, modifier: Modifier = Mod
 @Composable
 fun NeuSelect(options: List<Pair<String, String>>, current: String, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
+    val snd = LocalSound.current
     val mu = FB.MU
     Box(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().height(40.dp).neu("pillin40").clip(RoundedCornerShape(50)).clickable { open = true }.padding(start = 16.dp, end = 14.dp),
+        Row(Modifier.fillMaxWidth().height(40.dp).neu("pillin40").clip(RoundedCornerShape(50)).clickable { snd?.play("click"); open = true }.padding(start = 16.dp, end = 14.dp),
             verticalAlignment = Alignment.CenterVertically) {
             T(options.firstOrNull { it.first == current }?.second ?: "", Modifier.weight(1f), 13, maxLines = 1)
             Canvas(Modifier.size(12.dp, 8.dp)) {
@@ -267,7 +285,7 @@ fun NeuSelect(options: List<Pair<String, String>>, current: String, onPick: (Str
             }
         }
         DropdownMenu(open, { open = false }, modifier = Modifier.background(FB.BG)) {
-            options.forEach { (k, name) -> DropdownMenuItem(text = { T(name, size = 13, color = if (k == current) FB.AC else FB.TX) }, onClick = { open = false; onPick(k) }) }
+            options.forEach { (k, name) -> DropdownMenuItem(text = { T(name, size = 13, color = if (k == current) FB.AC else FB.TX) }, onClick = { snd?.play("click"); open = false; onPick(k) }) }
         }
     }
 }
@@ -276,8 +294,9 @@ fun NeuSelect(options: List<Pair<String, String>>, current: String, onPick: (Str
 fun NeuSwitch(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     val pos by animateFloatAsState(if (checked) 1f else 0f, spring(dampingRatio = 0.6f, stiffness = 500f), label = "sw")
     val ts = LocalTiles.current; val ac = FB.AC
+    val snd = LocalSound.current
     Box(
-        modifier.size(54.dp, 28.dp).clip(CircleShape).clickable { onChange(!checked) }.drawBehind {
+        modifier.size(54.dp, 28.dp).clip(CircleShape).clickable { snd?.play("click"); onChange(!checked) }.drawBehind {
             if (ts != null) {
                 drawTile(ts, "swtrack", 0f, 0f, size.width, size.height)
                 if (pos > 0.01f) drawRoundRect(ac.copy(alpha = pos.coerceIn(0f, 1f)), Offset.Zero, size, androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()))
@@ -330,7 +349,8 @@ fun Orb(color: Color, modifier: Modifier = Modifier) {
 @Composable
 fun Swatch(color: Color, selected: Boolean, onClick: () -> Unit) {
     val ts = LocalTiles.current
-    Box(Modifier.size(34.dp).clip(CircleShape).clickable { onClick() }.drawBehind {
+    val snd = LocalSound.current
+    Box(Modifier.size(34.dp).clip(CircleShape).clickable { snd?.play("click"); onClick() }.drawBehind {
         if (ts != null) drawTile(ts, if (selected) "swatchon" else "swatch", 0f, 0f, size.width, size.height)
         drawCircle(color, 8.dp.toPx(), center)
     })
@@ -341,17 +361,21 @@ fun Swatch(color: Color, selected: Boolean, onClick: () -> Unit) {
 fun Knob(value: Double, lo: Double, hi: Double, step: Double, onChange: (Double) -> Unit, modifier: Modifier = Modifier) {
     val ts = LocalTiles.current; val ac = FB.AC; val mu = FB.MU; val sd = FB.SD
     val f = ((value - lo) / (hi - lo)).coerceIn(0.0, 1.0).toFloat()
+    val snd = LocalSound.current
+    var lastV by remember { mutableStateOf(value) }
     fun set(p: Offset, s: Float) {
         val k = s / 130f
         var a = Math.toDegrees(atan2((p.x / k - 65f).toDouble(), -(p.y / k - 65f).toDouble()))
         if (Math.abs(a) > 135) a = if (a < 0) -135.0 else 135.0
         val v = lo + (a + 135) / 270 * (hi - lo)
-        onChange(Math.round(Math.round(v.coerceIn(lo, hi) / step) * step * 100) / 100.0)
+        val nv = Math.round(Math.round(v.coerceIn(lo, hi) / step) * step * 100) / 100.0
+        if (nv != lastV) { lastV = nv; snd?.knobTick(((nv - lo) / (hi - lo)).coerceIn(0.0, 1.0).toFloat()) }
+        onChange(nv)
     }
     Box(
         modifier.size(130.dp)
             .pointerInput(Unit) { detectTapGestures { set(it, size.width.toFloat()) } }
-            .pointerInput(Unit) { detectDragGestures { c, _ -> c.consume(); set(c.position, size.width.toFloat()) } }
+            .pointerInput(Unit) { detectDragGestures(onDragStart = { snd?.knobSpin() }, onDragEnd = { snd?.knobStop() }, onDragCancel = { snd?.knobStop() }) { c, _ -> c.consume(); set(c.position, size.width.toFloat()) } }
             .drawBehind {
                 val u = size.width / 130f
                 if (ts != null) {

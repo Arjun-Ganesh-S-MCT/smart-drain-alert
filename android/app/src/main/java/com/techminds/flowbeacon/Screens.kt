@@ -70,6 +70,11 @@ import kotlin.math.roundToInt
 @Composable
 fun AppRoot(vm: AppVm) {
     FlowTheme(vm.accent, vm.mode) {
+      val dens = androidx.compose.ui.platform.LocalDensity.current
+      androidx.compose.runtime.CompositionLocalProvider(
+          LocalSound provides vm.sound, LocalLang provides vm.lang,
+          androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(dens.density, dens.fontScale * vm.zoom)
+      ) {
         Box(Modifier.fillMaxSize().background(FB.BG)) {
             var introDone by rememberSaveable { mutableStateOf(false) }
             when {
@@ -78,13 +83,14 @@ fun AppRoot(vm: AppVm) {
                 else -> MainScreen(vm)
             }
         }
+      }
     }
 }
 
 private val TABS = listOf(
     Triple("overview", "Overview", "devices"), Triple("model", "Drain model", "zone"), Triple("incidents", "Incidents", "blockage"),
-    Triple("connect", "Connection", "connect"), Triple("calib", "Calibration", "calibration"), Triple("drip", "Ask Drip", "team"),
-    Triple("settings", "Settings", "status"), Triple("console", "Console", "update")
+    Triple("connect", "Connection", "connect"), Triple("history", "History", "resolved"), Triple("calib", "Calibration", "calibration"),
+    Triple("drip", "Ask Drip", "team"), Triple("settings", "Settings", "status"), Triple("console", "Console", "update"), Triple("map", "City map", "map")
 )
 
 @Composable
@@ -96,6 +102,7 @@ fun MainScreen(vm: AppVm) {
         Header(vm)
         Toolbar(vm) { tab = it }
         if (vm.banner.isNotEmpty()) AlarmBanner(vm)
+        UpdateBar(vm)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 22.dp, end = 22.dp, top = 14.dp, bottom = 130.dp),
@@ -110,6 +117,8 @@ fun MainScreen(vm: AppVm) {
                     "drip" -> DripPage(vm)
                     "settings" -> SettingsPage(vm)
                     "console" -> ConsolePage(vm)
+                    "history" -> HistoryPage(vm)
+                    "map" -> CityMapPage(vm)
                 }
             }
             // Drip stands on the top edge of the menu bar: it lives inside the content area, so it can never fall behind the bar
@@ -167,6 +176,7 @@ fun AlarmBanner(vm: AppVm) {
 @Composable
 fun BottomBar(tabs: List<String>, cur: String, pick: (String) -> Unit) {
     val sd = FB.SD; val sl = FB.SL
+    val snd = LocalSound.current
     Row(
         Modifier.fillMaxWidth().background(FB.BG).drawBehind {
             drawRect(sd, Offset.Zero, androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx()))
@@ -177,7 +187,7 @@ fun BottomBar(tabs: List<String>, cur: String, pick: (String) -> Unit) {
         TABS.filter { it.first in tabs }.forEach { (k, name, ic) ->
             val sel = k == cur
             Column(
-                Modifier.widthIn(min = 70.dp).let { if (sel) it.neu("inset") else it }.clip(RoundedCornerShape(14.dp)).clickable { pick(k) }.padding(horizontal = 10.dp, vertical = 7.dp),
+                Modifier.widthIn(min = 70.dp).let { if (sel) it.neu("inset") else it }.clip(RoundedCornerShape(14.dp)).clickable { snd?.play("click"); pick(k) }.padding(horizontal = 10.dp, vertical = 7.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Ico(ic, 22.dp)
@@ -267,6 +277,7 @@ fun OverviewPage(vm: AppVm) {
                     Sub(s.e.cause)
                     Sub(if (s.e.ev.isNotEmpty()) s.e.ev.joinToString(" · ") else if (vm.base != null) "Readings match baseline" else "Set a baseline while flow is normal")
                     if (s.pred.isNotEmpty()) Sub(s.pred, color = FB.AC)
+                    if (s.ml.isNotEmpty()) Sub(s.ml)
                     Sub(if (s.issues.isNotEmpty()) "Sensor check: " + s.issues.joinToString("; ") else "Sensors look healthy", color = if (s.issues.isNotEmpty()) Color(0xFFE8761F) else FB.MU)
                 }
             }
@@ -293,6 +304,7 @@ fun OverviewPage(vm: AppVm) {
             Box(Modifier.weight(1f)) { NeuField(name, { name = it }) }
             NeuButton("Rename", { vm.renameNode(name) })
         }
+        vm.otherNames().forEach { (n, lvl) -> Sub(n + " · " + Core.LEVELS[lvl].icon + " " + Core.LEVELS[lvl].name) }
     }
     val d = s?.d; val b = vm.base
     Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
@@ -435,6 +447,7 @@ fun ConnectPage(vm: AppVm) {
         Sub("The phone and the board must be on the same Wi-Fi. To give the board its Wi-Fi details, use the desktop app over USB; the board then shows its address.")
         if (vm.msg.isNotEmpty()) Sub(vm.msg)
     }
+    UsbCard(vm)
     NeuCard(title = "SMS alerts") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             T("Send SMS alerts", Modifier.weight(1f))
@@ -485,6 +498,7 @@ fun CalibPage(vm: AppVm) {
         NeuButton("Reset thresholds", { vm.resetCfg() })
         Sub("Turn a dial by dragging it. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically.")
     }
+    LearnCards(vm)
 }
 
 // ------------------------------------------------------------------ Ask Drip
@@ -542,8 +556,9 @@ fun SettingsPage(vm: AppVm) {
             T("Vibrate on overflow risk", Modifier.weight(1f)); NeuSwitch(vm.vibrate, { vm.setVibrateOn(it) })
         }
     }
+    SettingsExtras(vm)
     NeuCard(title = "About") {
-        T("FlowBeacon 2.0.0")
+        T("FlowBeacon 2.0.1")
         Sub("by TechMinds. Smart drainage monitoring and blockage prediction for the ESP32-S3 prototype.")
         Sub("Switch between Consumer, Maintenance and Developer modes with the button in the top bar.")
     }
