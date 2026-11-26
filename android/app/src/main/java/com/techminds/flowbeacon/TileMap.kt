@@ -14,13 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-<<<<<<< HEAD
-import androidx.compose.ui.geometry.Offset
-=======
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -51,11 +47,7 @@ import kotlin.math.tan
 
 /** Map tiles from OpenStreetMap (free, no key, no web view). Tiles are saved in the app cache, so seen places still show offline. */
 object Tiles {
-<<<<<<< HEAD
-    const val UA = "FlowBeacon/2.0.3 (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)"
-=======
     const val UA = "FlowBeacon/2.0.5 (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)"
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
     const val CREDIT = "© OpenStreetMap contributors"
     const val MIN_Z = 2
     const val MAX_Z = 18
@@ -132,10 +124,6 @@ object Tiles {
     }
 }
 
-<<<<<<< HEAD
-/** The map view: drag to move, pinch to zoom, tap a pin to select it. */
-class MapView {
-=======
 /** Finds the phone's position once (last known position first, then a fresh fix from GPS or the network). */
 object MyLocation {
     @android.annotation.SuppressLint("MissingPermission")
@@ -166,7 +154,6 @@ object MyLocation {
 class MapView {
     var meLat by mutableStateOf<Double?>(null)      // the phone's own position (blue dot), once found
     var meLng by mutableStateOf<Double?>(null)
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
     var zoom by mutableStateOf(12f)
     var lat by mutableStateOf(CityBook.CENTER_LAT)
     var lng by mutableStateOf(CityBook.CENTER_LNG)
@@ -190,11 +177,7 @@ fun TileMapView(states: List<DevState>, sel: String?, label: (DevState) -> Strin
     }
 
     Canvas(
-<<<<<<< HEAD
-        Modifier.fillMaxWidth().height(340.dp)
-=======
         Modifier.fillMaxWidth().height(340.dp).clipToBounds()      // tiles must not be drawn outside the map box
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoomChange, _ ->
                     view.fitted = true
@@ -209,11 +192,7 @@ fun TileMapView(states: List<DevState>, sel: String?, label: (DevState) -> Strin
             .pointerInput(states) {
                 detectTapGestures { o ->
                     val w = size.width.toFloat(); val h = size.height.toFloat()
-<<<<<<< HEAD
-                    val best = states.map { it.id to toScreen(it.dv.lat, it.dv.lng, w, h, 256.dp.toPx()) }.minByOrNull { (it.second - o).getDistance() }
-=======
                     val best = states.map { it.id to (toScreen(it.dv.lat, it.dv.lng, w, h, 256.dp.toPx()) - Offset(0f, 23.dp.toPx())) }.minByOrNull { (it.second - o).getDistance() }
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
                     if (best != null && (best.second - o).getDistance() < 48.dp.toPx()) onPick(best.first)
                 }
             }
@@ -243,11 +222,6 @@ fun TileMapView(states: List<DevState>, sel: String?, label: (DevState) -> Strin
         paint.textSize = 11.dp.toPx()
         states.forEach { s ->
             val p = toScreen(s.dv.lat, s.dv.lng, w, h, tilePx)
-<<<<<<< HEAD
-            if (s.id == sel) { drawCircle(Color.White, 18.dp.toPx(), p, style = Stroke(5.dp.toPx())); drawCircle(ac, 17.dp.toPx(), p, style = Stroke(3.dp.toPx())) }
-            drawCircle(Color.White, 12.dp.toPx(), p)
-            drawCircle(Color(CityBook.STAT_COLOR.getValue(s.status)), 10.dp.toPx(), p)
-=======
             // a map pin: a round head and a point at the exact place
             val r = 11.dp.toPx(); val head = Offset(p.x, p.y - r * 2.1f)
             val col = Color(CityBook.STAT_COLOR.getValue(s.status))
@@ -258,21 +232,17 @@ fun TileMapView(states: List<DevState>, sel: String?, label: (DevState) -> Strin
             drawPath(tri(2.dp.toPx()), Color.White); drawCircle(Color.White, r + 2.dp.toPx(), head)
             drawPath(tri(0f), col); drawCircle(col, r, head)
             drawCircle(Color.White, r * 0.38f, head)
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
             val text = label(s)
             val tw = paint.measureText(text) + 12.dp.toPx()
             drawRoundRect(Color.White.copy(alpha = 0.85f), Offset(p.x - tw / 2, p.y + 16.dp.toPx()), Size(tw, 20.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
             paint.color = 0xFF222222.toInt()
             drawContext.canvas.nativeCanvas.drawText(text, p.x, p.y + 31.dp.toPx(), paint)
         }
-<<<<<<< HEAD
-=======
         val ml = view.meLat; val mg = view.meLng
         if (ml != null && mg != null) {                                   // "you are here"
             val q = toScreen(ml, mg, w, h, tilePx)
             drawCircle(Color(0x332F80ED), 24.dp.toPx(), q); drawCircle(Color.White, 9.dp.toPx(), q); drawCircle(Color(0xFF2F80ED), 7.dp.toPx(), q)
         }
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
         credit.textSize = 10.dp.toPx()
         drawRect(Color.White.copy(alpha = 0.8f), Offset(w - credit.measureText(Tiles.CREDIT) - 12.dp.toPx(), h - 18.dp.toPx()), Size(credit.measureText(Tiles.CREDIT) + 12.dp.toPx(), 18.dp.toPx()))
         drawContext.canvas.nativeCanvas.drawText(Tiles.CREDIT, w - 6.dp.toPx(), h - 5.dp.toPx(), credit)

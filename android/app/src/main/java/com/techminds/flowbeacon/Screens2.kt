@@ -8,10 +8,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
-<<<<<<< HEAD
-=======
 import androidx.core.content.ContextCompat
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -174,8 +171,6 @@ fun CityMapPage(vm: AppVm) {
     var eLng by rememberSaveable { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     val mapView = remember { MapView() }
-<<<<<<< HEAD
-=======
     val ctx = LocalContext.current
     var locMsg by remember { mutableStateOf("") }
     fun locate() {
@@ -183,7 +178,6 @@ fun CityMapPage(vm: AppVm) {
         MyLocation.fetch(ctx, { la, lo -> mapView.meLat = la; mapView.meLng = lo; mapView.lat = la; mapView.lng = lo; mapView.zoom = 15f; mapView.fitted = true; locMsg = "" }, { locMsg = it })
     }
     val askLoc = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) locate() else locMsg = "Location permission was refused." }
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
     LaunchedEffect(Unit) { while (true) { delay(3000); tick++ } }
 
     if (rev < 0) return                       // reads rev so every action below refreshes the page
@@ -222,8 +216,6 @@ fun CityMapPage(vm: AppVm) {
             NeuButton("Zoom out", { mapView.fitted = true; mapView.zoom = (mapView.zoom - 1f).coerceAtLeast(2f) })
             NeuButton("Fit all drains", { mapView.fitted = false })
         }
-<<<<<<< HEAD
-=======
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NeuButton("My location", {
                 val ok = ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
@@ -232,7 +224,6 @@ fun CityMapPage(vm: AppVm) {
             }, main = true)
         }
         if (locMsg.isNotEmpty()) Sub(locMsg)
->>>>>>> ce45d4c (2.0.5: fix map clipping, pin icons, my location)
         Sub("${st.size} drains · ${st.count { it.online }} online · ${incs.count { it.status != "resolved" }} open incidents")
         Sub("Map from OpenStreetMap (free). Drag to move, pinch to zoom. Tiles you have seen are saved on the phone, so they still show offline.")
     }
