@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 
 data class Cfg(
     val dropWarn: Double = 25.0, val dropBlock: Double = 50.0, val rise: Double = 1.0,
-    val risk: Double = 4.0, val over: Double = 2.0, val turb: Double = 30.0
+    val risk: Double = 7.0, val over: Double = 3.0, val turb: Double = 30.0
 )
 
 data class Base(val flow: Double, val dist: Double, val turb: Double, val sf: Double, val sd: Double, val st: Double)
@@ -33,13 +33,35 @@ object Core {
 
     private fun f(fmt: String, vararg a: Any) = String.format(Locale.US, fmt, *a)
 
-    // The water level comes from a 5-step sensor (five probes, each with a transistor). The Arduino reports how many are wet
-    // ("lv", 0 to 5); the app turns that into a distance from the sensor top so the rest of the logic is unchanged.
-    const val EMPTY_CM = 18.0       // distance when no probe is wet (keep the same as EMPTY_CM in the firmware)
-    const val STEP_CM = 3.0         // height between two probes
-    fun level5(dist: Double): Int = Math.round((EMPTY_CM - dist) / STEP_CM).toInt().coerceIn(0, 5)
-    fun distFromLv(lv: Int): Double = EMPTY_CM - lv.coerceIn(0, 5) * STEP_CM
-    fun q5(dist: Double): Double = distFromLv(level5(dist))
+    // The water level comes from a 3-probe sensor (low, mid and high probe, each through a BC547 transistor). The Nano reports which
+    // probes are wet; the app turns that into a level 0..3 and a distance from the sensor top, so the rest of the logic is unchanged.
+    const val EMPTY_CM = 15.0       // distance when no probe is wet
+    const val STEP_CM = 4.0         // height between two probes
+    const val MAX_LV = 3
+    val LEVEL_P = doubleArrayOf(0.12, 0.34, 0.62, 0.90)     // where the water is drawn in the drain picture for level 0..3
+    val PROBE_P = doubleArrayOf(0.30, 0.58, 0.86)           // where the three probes sit in the picture
+    const val RAW_MAX = 1023.0                              // the Nano's analog input is 10 bit
+    fun levelOf(dist: Double): Int = Math.round((EMPTY_CM - dist) / STEP_CM).toInt().coerceIn(0, MAX_LV)
+    fun distFromLv(lv: Int): Double = EMPTY_CM - lv.coerceIn(0, MAX_LV) * STEP_CM
+    fun qLevel(dist: Double): Double = distFromLv(levelOf(dist))
+    fun levelP(dist: Double): Double = LEVEL_P[levelOf(dist)]
+
+    /** Reads a line from the Nano sketch (flow_l_min, turbidity_raw, rain_wet, level_*_wet) or the short names (flow, dist, turb, rain, lv). Null if it has no reading. */
+    fun parseLine(d: org.json.JSONObject): Reading? {
+        if (!d.has("flow") && !d.has("flow_l_min")) return null
+        val flow = if (d.has("flow")) d.optDouble("flow", 0.0) else d.optDouble("flow_l_min", 0.0)
+        val turb = if (d.has("turb")) d.optDouble("turb", 0.0) else (RAW_MAX - d.optDouble("turbidity_raw", RAW_MAX)) * 4.0   // AZDM01: lower raw = cloudier
+        val rain = if (d.has("rain")) (d.optInt("rain", 0) != 0 || d.optBoolean("rain", false)) else d.optBoolean("rain_wet", false)
+        val lv = when {
+            d.has("lv") -> d.optInt("lv", 0)
+            d.has("level_high_wet") || d.has("level_mid_wet") || d.has("level_low_wet") ->
+                if (d.optBoolean("level_high_wet")) 3 else if (d.optBoolean("level_mid_wet")) 2 else if (d.optBoolean("level_low_wet")) 1 else 0
+            d.has("water_level_percent") -> Math.round(d.optDouble("water_level_percent", 0.0) / 33.0).toInt().coerceIn(0, MAX_LV)
+            else -> 0
+        }
+        val dist = if (d.has("dist")) d.optDouble("dist", 0.0) else distFromLv(lv)
+        return Reading(flow, dist, turb, rain)
+    }
 
     fun health(d: Reading, hist: List<Sample>, base: Base?): Health {
         val r = hist.takeLast(20)
@@ -191,7 +213,7 @@ object DripChat {
         if (has("(when|will).*(overflow|flood|full)|predict|\\beta\\b"))
             return Reply(if (c.pred.isNotEmpty()) c.pred else "No overflow is predicted right now.")
         if (has("turbidity|cloudy")) return Reply("Turbidity is how cloudy the water is. More silt or mud gives a higher reading, which can support a blockage estimate.")
-        if (has("ultrasonic|distance|level|probe|sensor")) return Reply("The water level sensor has five probes at different heights, each with a transistor. The level is how many probes are wet, from 0 to 5. More wet probes means higher water.", null)
+        if (has("ultrasonic|distance|level|probe|sensor")) return Reply("The water level sensor has three probes (low, mid and high), each with a BC547 transistor. The level is how many probes are wet, from 0 to 3. The mid probe means overflow risk and the high probe means overflow.", null)
         if (has("\\bflow\\b")) return Reply("The flow sensor counts pulses. Flow falling while the water level rises is the classic blockage sign.")
         if (has("calibrat")) return Reply("Calibration teaches the app what normal looks like. Use the wizard under Calibration, then tune the sliders.")
         if (has("\\b(sms|text message)\\b")) return Reply("SMS needs a GSM module on the board. Add your number under Connection and press Send test SMS.")

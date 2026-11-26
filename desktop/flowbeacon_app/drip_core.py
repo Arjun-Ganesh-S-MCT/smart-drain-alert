@@ -56,7 +56,7 @@ def reply(text, ctx):
     if has(r"(when|will).*(overflow|flood|full)|predict|\beta\b"):
         return ctx.get("pred") or "No overflow is predicted right now.", None
     if has(r"turbidity|cloudy"): return "Turbidity is how cloudy the water is. More silt or mud gives a higher reading, which can support a blockage estimate.", None
-    if has(r"ultrasonic|distance|level|probe|sensor"): return "The water level sensor has five probes at different heights, each with a transistor. The level is how many probes are wet, from 0 to 5. More wet probes means higher water.", None
+    if has(r"ultrasonic|distance|level|probe|sensor"): return "The water level sensor has three probes (low, mid and high), each with a BC547 transistor. The level is how many probes are wet, from 0 to 3. The mid probe means overflow risk and the high probe means overflow.", None
     if has(r"\bflow\b"): return "The flow sensor counts pulses. Flow falling while the water level rises is the classic blockage sign.", None
     if has(r"calibrat"): return "Calibration teaches the app what normal looks like. Use the wizard under Calibration, then tune the dials.", None
     if has(r"\b(sms|text message)\b"): return "SMS needs a GSM module on the board. Add your number and press Send test SMS.", None

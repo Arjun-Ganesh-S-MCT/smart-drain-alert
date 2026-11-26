@@ -40,6 +40,8 @@ class Store:
         except (OSError, ValueError):
             pass
         self.d["cfg"] = {**DEF, **self.d.get("cfg", {})}
+        if self.d["cfg"].get("risk") == 4 and self.d["cfg"].get("over") == 2:      # old defaults were for the ultrasonic sensor
+            self.d["cfg"]["risk"], self.d["cfg"]["over"] = DEF["risk"], DEF["over"]
         self.d["quiet"] = {"on": False, "from": "22:00", "to": "06:00", "smsMin": 3, **(self.d.get("quiet") or {})}
         self.d["snd"] = {"ui": True, "possible": True, "warning": True, "risk": True, "overflow": True, "rain": True, "predict": True, **self.d.get("snd", {})}
 

@@ -1,7 +1,7 @@
 """Analysis core: a line-for-line port of src/core.js (blockage and overflow evaluation). No Qt here, so it is testable."""
 import math
 
-DEF = {"dropWarn": 25, "dropBlock": 50, "rise": 1, "risk": 4, "over": 2, "turb": 30}
+DEF = {"dropWarn": 25, "dropBlock": 50, "rise": 1, "risk": 7, "over": 3, "turb": 30}
 LEVELS = [
     ("Normal", "#22b573", "None"),
     ("Possible blockage", "#e6b800", "Low"),
@@ -17,25 +17,44 @@ def conf(c):
             "over": c["over"], "tb": c["turb"] / 100}
 
 
-# The water level comes from a 5-step sensor (five probes, each with a transistor). The Arduino reports how many are wet
-# ("lv", 0 to 5); the app turns that into a distance from the sensor top so the rest of the logic is unchanged.
-EMPTY_CM = 18.0     # distance when no probe is wet (keep the same as EMPTY_CM in the firmware)
-STEP_CM = 3.0       # height between two probes
+# The water level comes from a 3-probe sensor (low, mid and high probe, each through a BC547 transistor). The Nano reports which
+# probes are wet; the app turns that into a level 0..3 and a distance from the sensor top, so the rest of the logic is unchanged.
+EMPTY_CM = 15.0     # distance when no probe is wet
+STEP_CM = 4.0       # height between two probes
+MAX_LV = 3
+LEVEL_P = (0.12, 0.34, 0.62, 0.90)     # where the water is drawn in the drain picture for level 0..3
+PROBE_P = (0.30, 0.58, 0.86)           # where the three probes sit in the picture
+RAW_MAX = 1023.0                       # the Nano's analog input is 10 bit
 
 
-def level5(dist):
-    return max(0, min(5, int(round((EMPTY_CM - dist) / STEP_CM))))
+def level_of(dist):
+    return max(0, min(MAX_LV, int(round((EMPTY_CM - dist) / STEP_CM))))
 
 
 def dist_from_lv(lv):
-    return EMPTY_CM - max(0, min(5, int(lv))) * STEP_CM
+    return EMPTY_CM - max(0, min(MAX_LV, int(lv))) * STEP_CM
 
 
 def normalize(d):
-    """Makes sure a reading has a distance. A reading from the Nano has "lv" (0 to 5) and may have no "dist"."""
+    """Accepts the Nano sketch's own JSON (flow_l_min, turbidity_raw, rain_wet, level_*_wet) and the short names the app uses."""
+    if "flow" not in d and "flow_l_min" in d:
+        d["flow"] = float(d["flow_l_min"])
+    if "turb" not in d and "turbidity_raw" in d:        # AZDM01: a LOWER raw value means cloudier water, the app wants higher = cloudier
+        d["turb"] = (RAW_MAX - float(d["turbidity_raw"])) * 4.0
+    if "rain" not in d and "rain_wet" in d:
+        d["rain"] = 1 if d["rain_wet"] else 0
+    if "lv" not in d:
+        if "level_high_wet" in d or "level_mid_wet" in d or "level_low_wet" in d:
+            d["lv"] = 3 if d.get("level_high_wet") else 2 if d.get("level_mid_wet") else 1 if d.get("level_low_wet") else 0
+        elif "water_level_percent" in d:
+            d["lv"] = max(0, min(MAX_LV, int(round(float(d["water_level_percent"]) / 33.0))))
     if "dist" not in d and "lv" in d:
         d["dist"] = dist_from_lv(d["lv"])
     return d
+
+
+def level_p(dist):
+    return LEVEL_P[level_of(dist)]
 
 
 def health(d, hist):

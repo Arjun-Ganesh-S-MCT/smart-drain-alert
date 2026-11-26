@@ -112,8 +112,11 @@ class Prefs(ctx: Context) {
             val d = Cfg()
             return Cfg(
                 sp.getFloat("c_dropWarn", d.dropWarn.toFloat()).toDouble(), sp.getFloat("c_dropBlock", d.dropBlock.toFloat()).toDouble(),
-                sp.getFloat("c_rise", d.rise.toFloat()).toDouble(), sp.getFloat("c_risk", d.risk.toFloat()).toDouble(),
-                sp.getFloat("c_over", d.over.toFloat()).toDouble(), sp.getFloat("c_turb", d.turb.toFloat()).toDouble()
+                sp.getFloat("c_rise", d.rise.toFloat()).toDouble(),
+                // the old defaults (4 and 2) were for the ultrasonic sensor: use the 3-probe defaults instead
+                (if (sp.getFloat("c_risk", 0f) == 4f && sp.getFloat("c_over", 0f) == 2f) d.risk.toFloat() else sp.getFloat("c_risk", d.risk.toFloat())).toDouble(),
+                (if (sp.getFloat("c_risk", 0f) == 4f && sp.getFloat("c_over", 0f) == 2f) d.over.toFloat() else sp.getFloat("c_over", d.over.toFloat())).toDouble(),
+                sp.getFloat("c_turb", d.turb.toFloat()).toDouble()
             )
         }
         set(c) = sp.edit().putFloat("c_dropWarn", c.dropWarn.toFloat()).putFloat("c_dropBlock", c.dropBlock.toFloat())

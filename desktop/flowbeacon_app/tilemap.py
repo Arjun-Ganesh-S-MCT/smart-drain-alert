@@ -2,7 +2,7 @@
 import math
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QWidget
 
 from . import citymap, tiles
@@ -95,15 +95,29 @@ class TileMap(QWidget):
             pt = self.to_screen(s["dv"]["lat"], s["dv"]["lng"])
             self.pos[s["id"]] = pt
             col = QColor(citymap.STAT_COLOR[s["status"]])
+            r = 11.0
+            head = QPointF(pt.x(), pt.y() - r * 2.1)                  # a map pin: round head, point at the exact place
+            def tri(k):
+                path = QPainterPath()
+                path.moveTo(pt.x(), pt.y() + k * 0.6)
+                path.lineTo(head.x() - (r + k) * 0.85, head.y() + (r + k) * 0.55)
+                path.lineTo(head.x() + (r + k) * 0.85, head.y() + (r + k) * 0.55)
+                path.closeSubpath()
+                return path
             if s["id"] == self.sel:
-                p.setPen(QPen(QColor("#ffffff"), 5))
-                p.setBrush(Qt.BrushStyle.NoBrush)
-                p.drawEllipse(pt, 17, 17)
                 p.setPen(QPen(THEME.c("ac"), 3))
-                p.drawEllipse(pt, 17, 17)
-            p.setPen(QPen(QColor("#ffffff"), 2))
+                p.setBrush(Qt.BrushStyle.NoBrush)
+                p.drawEllipse(head, r + 6, r + 6)
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor("#ffffff"))
+            p.drawPath(tri(2.0))
+            p.drawEllipse(head, r + 2, r + 2)
             p.setBrush(col)
-            p.drawEllipse(pt, 11, 11)
+            p.drawPath(tri(0.0))
+            p.drawEllipse(head, r, r)
+            p.setBrush(QColor("#ffffff"))
+            p.drawEllipse(head, r * 0.38, r * 0.38)
+            self.pos[s["id"]] = head                                   # taps are tested against the round head
             label = citymap.CityBook.label(s)
             p.setFont(font(11, True))
             tw = p.fontMetrics().horizontalAdvance(label) + 12

@@ -28,6 +28,7 @@ import kotlin.math.sin
 /** Animated values behind the drain cross-section (water height, wave, pipe flow, blockage). Port of drain.py. */
 class DrainState {
     var y = 167 - 0.5 * 134
+    var p = 0.5
     var amp = 1.2
     var phase = 0.0
     var t = 0.0
@@ -42,6 +43,7 @@ class DrainState {
 
     fun setValues(p: Double, flowRatio: Double, blocked: Boolean, turbidity: Double, raining: Boolean, calmMode: Boolean) {
         val ny = 167 - p.coerceIn(0.0, 1.0) * 134
+        this.p = p
         if (!calmMode && abs(ny - y) > 0.4) amp = min(7.0, amp + abs(ny - y) * 1.2)
         y = ny; debrisTarget = if (blocked) 1.0 else 0.0
         turb = turbidity.coerceIn(0.0, 1.0); rain = raining; calm = calmMode
@@ -66,6 +68,7 @@ class DrainState {
         val sp = 6 + max(0.0, y - 48) * 0.16
         val rep = HashMap<String, String>()
         rep["WATER"] = water; rep["SURF"] = surf
+        for (i in 0..2) rep["P${i + 1}"] = if (p > Core.PROBE_P[i]) "1.0" else "0.22"      // a probe lights up when the water is above it
         rep["BEAM"] = "70,48 90,48 ${f(90 + sp)},${f(y)} ${f(70 - sp)},${f(y)}"
         rep["WG1"] = mix(intArrayOf(86, 170, 220), intArrayOf(168, 128, 74), turb)
         rep["WG2"] = mix(intArrayOf(40, 110, 170), intArrayOf(104, 74, 40), turb)
@@ -120,8 +123,7 @@ fun DrainPicture(vm: AppVm, modifier: Modifier = Modifier) {
     val s = vm.snap; val b = vm.base; val c = vm.cfg; val calm = vm.calm
     SideEffect {
         if (s != null) {
-            val ref = (b?.dist ?: 15.0) + 3; val over = c.over
-            val p = (1 - (s.d.dist - over) / max(ref - over, 1.0)).coerceIn(0.0, 1.0)
+            val p = Core.levelP(s.d.dist)          // the 3-probe sensor: the water is drawn at the step it reads
             val fl = if (b != null && b.flow > 0) s.d.flow / b.flow else if (s.d.flow > 0) 1.0 else 0.0
             val tb = if (b != null && b.turb > 0) (s.d.turb / b.turb - 1) / 1.2 else (s.d.turb - 800) / 800
             st.setValues(p, if (s.d.flow > 0.05) fl else 0.0, s.e.fd >= c.dropWarn / 100, tb, s.d.rain, calm)

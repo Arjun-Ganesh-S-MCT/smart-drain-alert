@@ -16,9 +16,9 @@ try:
 except ImportError:  # pragma: no cover
     QWebSocket = None
 
-DEMO_EXTRA = [("demo-2", 4.1, 12.4, 870), ("demo-3", 2.2, 10.6, 1100)]
-SCEN = {"normal": (4.2, 12.5, 850, 0), "partial": (2, 11, 1150, 0), "rain": (4.1, 10.8, 860, 1),
-        "both": (1.6, 8.5, 1200, 1), "over": (0.9, 1.8, 1300, 1)}
+DEMO_EXTRA = [("demo-2", 4.1, 11, 870), ("demo-3", 2.2, 7, 1100)]
+SCEN = {"normal": (4.2, 11, 850, 0), "partial": (2, 11, 1150, 0), "rain": (4.1, 11, 860, 1),
+        "both": (1.6, 7, 1200, 1), "over": (0.9, 3, 1300, 1)}
 
 
 class Link(QObject):
@@ -67,7 +67,7 @@ class Link(QObject):
         self.tick += 1
         p = SCEN["normal" if self.cal_pending else self.scen]
         n = lambda: random.random() - 0.5  # noqa: E731
-        q = lambda x: core.dist_from_lv(core.level5(x))  # noqa: E731 - the sensor only has 5 steps
+        q = lambda x: core.dist_from_lv(core.level_of(x))  # noqa: E731 - the sensor only has 3 probes
         self.data.emit({"flow": p[0] + n() * 0.2, "dist": q(p[1] + n() * 0.2), "turb": p[2] + n() * 30, "rain": p[3]})
         for nid, fl, di, tu in DEMO_EXTRA:           # two more drains, so the city map has something to show
             self.data.emit({"node": nid, "flow": fl + n() * 0.2, "dist": q(di + n() * 0.2), "turb": tu + n() * 30, "rain": 0})
@@ -215,5 +215,5 @@ class Link(QObject):
             self.board_ip.emit(str(d["ip"]))
         elif d.get("wifi") == "failed":
             self.wifi_failed.emit()
-        elif "flow" in d:
+        elif "flow" in d or "flow_l_min" in d:
             self.data.emit(core.normalize(d))

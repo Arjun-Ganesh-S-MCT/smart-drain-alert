@@ -1,28 +1,33 @@
-# FlowBeacon firmware: Arduino Nano
+# FlowBeacon firmware: Arduino Uno / Nano
 
-Sketch: `flowbeacon-nano/flowbeacon-nano.ino` (Arduino IDE, board "Arduino Nano", processor ATmega328P, old bootloader if upload fails). No extra libraries.
+Sketch: `flowbeacon-nano/flowbeacon-nano.ino` (Arduino IDE, board "Arduino Nano", processor ATmega328P). No extra libraries. It sends one JSON line per second over USB serial at 115200 baud, and does not read anything from the apps.
 
-## Wiring
+## Wiring (as in the sketch)
 
-| Part | Nano pin |
+| Part | Pin |
 |---|---|
-| Flow sensor YF-S201 signal | D2 (5 V and GND) |
-| Rain module DO | D3 |
-| Level probe 1 (lowest) | D4 |
-| Level probe 2 | D5 |
-| Level probe 3 | D6 |
-| Level probe 4 | D7 |
-| Level probe 5 (highest) | D8 |
-| Turbidity module analog out | A0 |
-| Buzzer (optional) | D9 |
-| SIM800L TX / RX (optional) | D10 / D11 (use a voltage divider on D11 to the SIM800L RX) |
+| ZJ-S201 flow sensor | D2 |
+| 3-level sensor, low probe (BC547) | D3 (INPUT_PULLUP, LOW = wet) |
+| 3-level sensor, mid probe | D4 |
+| 3-level sensor, high probe | D5 |
+| Rain sensor | D7 (LOW = wet) |
+| AZDM01 turbidity sensor | A0 |
 
-## The 5-level sensor
+## What the apps read from each line
 
-Mount five probes in the drain at 3 cm steps. Each probe feeds the base of an NPN transistor (through a resistor, about 100 k) so the Nano pin goes HIGH when the probe is wet. If your circuit is the other way round, set `LEVEL_ACTIVE_HIGH` to `false`.
+| Sketch field | App meaning |
+|---|---|
+| `flow_l_min` | flow in L/min (7.5 Hz per L/min) |
+| `level_low_wet`, `level_mid_wet`, `level_high_wet` (or `water_level_percent`) | water level 0 to 3 probes wet |
+| `turbidity_raw` | AZDM01, 10 bit. A lower value is cloudier water, so the app uses (1023 - raw) x 4 |
+| `rain_wet` | rain plate wet |
 
-The Nano sends `lv` (how many probes are wet, 0 to 5) and the matching `dist`. If you change the probe spacing or the empty distance, change `STEP_CM` and `EMPTY_CM` in the sketch and the same two numbers in `desktop/flowbeacon_app/core.py` and `android/.../Core.kt`.
+The other fields (`status`, `likely_cause`, `confidence`, `turbidity_cloudy`) are ignored: the app works out its own warnings from the baseline you set.
 
-## Connecting
+## Level in the app
 
-The Nano talks over USB only (115200 baud): a USB cable to the PC, or a USB OTG cable to the phone. There is no Wi-Fi. If a probe reads wet while a lower one is dry, the Nano adds `"fault":1` to the line.
+The apps turn the probes into a distance from the sensor top: 15 cm (dry), 11 (low probe), 7 (mid probe), 3 cm (high probe). `Overflow risk` defaults to 7 cm (mid probe) and `Overflow` to 3 cm (high probe). If your probes are spaced differently, change `EMPTY_CM` and `STEP_CM` in `desktop/flowbeacon_app/core.py` and `android/.../Core.kt`.
+
+## Not in this sketch
+
+No Wi-Fi, no commands from the app, and no GSM module, so the app's "SMS through the board" does nothing. On Android the phone can still show notifications.

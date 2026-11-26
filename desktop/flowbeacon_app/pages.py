@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QFileDialog, QFrame, QGridLayout, QHBoxLayout, QL
                                QVBoxLayout, QWidget)
 
 from . import __version__, core, drip_core
+from . import core
 from .controls import (ConnChip, H2, Inset, Knob, NeuButton, NeuCard, NeuCombo, NeuField, NeuSlider, NeuSwitch, Orb, Seg,
                        Swatch, sub)
 from .engine import WZ_STEPS
@@ -320,8 +321,7 @@ class Model(Page):
 
     def on_update(self, u):
         d, b, c = u["d"], self.ctx.engine.base, self.ctx.engine.cfg
-        ref, over = (b["dist"] if b else 15) + 3, c["over"]
-        p = max(0.0, min(1.0, 1 - (d["dist"] - over) / max(ref - over, 1)))
+        p = core.level_p(d["dist"])                 # the 3-probe sensor: the water is drawn at the step it reads
         fl = d["flow"] / b["flow"] if b and b["flow"] > 0 else (1 if d["flow"] > 0 else 0)
         tb = (d["turb"] / b["turb"] - 1) / 1.2 if b and b["turb"] > 0 else (d["turb"] - 800) / 800
         self.drain.set_values(p, fl if d["flow"] > 0.05 else 0, u["r"]["fd"] >= c["dropWarn"] / 100, tb, bool(d["rain"]), self.ctx.store["calm"])
@@ -519,6 +519,7 @@ class Connection(Page):
         self.wifi.hide()
         c1.box.addWidget(self.wifi)
         c2 = NeuCard("SMS alerts")
+        c2.box.addWidget(sub("SMS is sent by the board. The Arduino Nano sketch has no GSM module, so this does nothing until you add one."))
         self.sms_on = NeuSwitch(st["sms"]["on"])
         c2.box.addLayout(hbox(QLabel("Send SMS alerts"), None, self.sms_on))
         c2.box.addWidget(flabel("Mobile numbers (separate with commas)"))
@@ -638,7 +639,7 @@ class Calibration(Page):
         rd = NeuButton("Reset thresholds")
         rd.clicked.connect(ctx.engine.reset_cfg)
         c.box.addLayout(hbox(rd, None))
-        c.box.addWidget(sub("Turn a dial by dragging it, using the mouse wheel, or the arrow keys. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically."))
+        c.box.addWidget(sub("Turn a dial by dragging it, using the mouse wheel, or the arrow keys. The level sensor has three probes, so the water reads 15 cm (dry), 11 (low probe), 7 (mid probe) or 3 cm (high probe): Overflow risk 7 = mid probe, Overflow 3 = high probe. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically."))
         self.v.addWidget(c)
         self.v.addStretch(1)
         ctx.engine.config_changed.connect(self.load)

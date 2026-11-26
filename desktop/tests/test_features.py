@@ -107,7 +107,7 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(tamil.trans("Sound", "en"), "Sound")
         self.assertNotEqual(tamil.trans("Sound", "ta"), "Sound")
         self.assertGreater(updater.cmp("2.1.0", "2.0.9"), 0)
-        self.assertEqual(updater.cmp("2.0.3", "2.0.3"), 0)
+        self.assertEqual(updater.cmp("2.0.5", "2.0.5"), 0)
 
 
 class TilesTest(unittest.TestCase):
@@ -121,14 +121,27 @@ class TilesTest(unittest.TestCase):
         self.assertTrue(10 <= z <= 14)
         self.assertEqual(tiles.fit_zoom([], 800, 400)[0], 12)
 
-    def test_level_sensor(self):
+    def test_level_sensor_and_nano_json(self):
         from flowbeacon_app import core
-        self.assertEqual(core.level5(18), 0)
-        self.assertEqual(core.level5(3), 5)
-        self.assertEqual(core.dist_from_lv(2), 12.0)
-        d = core.normalize({"flow": 1, "lv": 3, "turb": 800, "rain": 0})
-        self.assertEqual(d["dist"], 9.0)
-
+        self.assertEqual(core.level_of(15), 0)
+        self.assertEqual(core.level_of(3), 3)
+        self.assertEqual(core.dist_from_lv(2), 7.0)
+        # the Nano sketch's own line
+        d = core.normalize({"device": "flow-beacon-arduino", "flow_l_min": 3.5, "water_level_percent": 66, "level_low_wet": True,
+                            "level_mid_wet": True, "level_high_wet": False, "turbidity_raw": 800, "rain_wet": True})
+        self.assertEqual(d["flow"], 3.5)
+        self.assertEqual(d["lv"], 2)
+        self.assertEqual(d["dist"], 7.0)
+        self.assertEqual(d["rain"], 1)
+        self.assertEqual(d["turb"], (1023 - 800) * 4.0)
+        d2 = core.normalize({"flow_l_min": 0, "water_level_percent": 100, "turbidity_raw": 1000, "rain_wet": False})
+        self.assertEqual(d2["lv"], 3)
+        self.assertEqual(d2["rain"], 0)
+        # risk and overflow defaults match the mid and high probe
+        r = core.evaluate({"flow": 4.2, "dist": 7.0, "turb": 892, "rain": 0}, False, {"flow": 4.2, "dist": 11.0, "turb": 892, "sf": .2, "sd": .2, "st": 30}, core.DEF)
+        self.assertEqual(r["lvl"], 3)
+        r = core.evaluate({"flow": 4.2, "dist": 3.0, "turb": 892, "rain": 0}, False, {"flow": 4.2, "dist": 11.0, "turb": 892, "sf": .2, "sd": .2, "st": 30}, core.DEF)
+        self.assertEqual(r["lvl"], 4)
 
 if __name__ == "__main__":
     unittest.main()

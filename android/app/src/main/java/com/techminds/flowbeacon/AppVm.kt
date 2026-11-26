@@ -459,9 +459,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         addRaw(l)
         if (l[0] != '{') return
         val d = try { JSONObject(l) } catch (e: Exception) { return }
-        if (d.has("flow")) {
-            val dist = if (d.has("dist")) d.optDouble("dist", 0.0) else Core.distFromLv(d.optInt("lv", 0))
-            val r = Reading(d.optDouble("flow", 0.0), dist, d.optDouble("turb", 0.0), d.optInt("rain", 0) != 0 || d.optBoolean("rain", false))
+        val r = Core.parseLine(d)
+        if (r != null) {
             val id = d.optString("node", "drain-1").ifEmpty { "drain-1" }
             if (id != "drain-1") otherNode(id, r) else onData(r)
         }
@@ -479,8 +478,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 tick++
                 val p = SCEN[if (calBuf != null || wzBuf != null) "normal" else scen] ?: SCEN["normal"]!!
                 fun n() = Math.random() - 0.5
-                onData(Reading(p[0] + n() * 0.2, Core.q5(p[1] + n() * 0.2), p[2] + n() * 30, p[3] > 0.5))
-                DEMO_EXTRA.forEach { x -> otherNode(x.first, Reading(x.second[0] + n() * 0.2, Core.q5(x.second[1] + n() * 0.2), x.second[2] + n() * 30, false)) }
+                onData(Reading(p[0] + n() * 0.2, Core.qLevel(p[1] + n() * 0.2), p[2] + n() * 30, p[3] > 0.5))
+                DEMO_EXTRA.forEach { x -> otherNode(x.first, Reading(x.second[0] + n() * 0.2, Core.qLevel(x.second[1] + n() * 0.2), x.second[2] + n() * 30, false)) }
                 if (tick == 2 && base == null) startBaseline()
             }
         }
@@ -709,10 +708,10 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        val DEMO_EXTRA = listOf("demo-2" to listOf(4.1, 12.4, 870.0), "demo-3" to listOf(2.2, 10.6, 1100.0))
+        val DEMO_EXTRA = listOf("demo-2" to listOf(4.1, 11.0, 870.0), "demo-3" to listOf(2.2, 7.0, 1100.0))
         val SCEN = mapOf(
-            "normal" to listOf(4.2, 12.5, 850.0, 0.0), "partial" to listOf(2.0, 11.0, 1150.0, 0.0),
-            "rain" to listOf(4.1, 10.8, 860.0, 1.0), "both" to listOf(1.6, 8.5, 1200.0, 1.0), "over" to listOf(0.9, 1.8, 1300.0, 1.0)
+            "normal" to listOf(4.2, 11.0, 850.0, 0.0), "partial" to listOf(2.0, 11.0, 1150.0, 0.0),
+            "rain" to listOf(4.1, 11.0, 860.0, 1.0), "both" to listOf(1.6, 7.0, 1200.0, 1.0), "over" to listOf(0.9, 3.0, 1300.0, 1.0)
         )
         val SCEN_NAMES = mapOf("normal" to "Normal", "partial" to "Partial blockage", "rain" to "Rain", "both" to "Blockage + rain", "over" to "Overflow")
     }

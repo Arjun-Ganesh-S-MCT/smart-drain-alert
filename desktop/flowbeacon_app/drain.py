@@ -2,6 +2,8 @@
 import math
 from pathlib import Path
 
+from . import core
+
 TPL = (Path(__file__).parent / "assets" / "drain.svg.tpl").read_text(encoding="utf8")
 
 
@@ -58,7 +60,8 @@ class DrainState:
         beam = "70,48 90,48 %.1f,%.1f %.1f,%.1f" % (90 + sp, y, 70 - sp, y)
         t = 0.0 if self.calm else self.t
         led = "%.2f" % (1.0 - 0.75 * (0.5 - 0.5 * math.cos(t * 2 * math.pi / 1.6)))
-        rep = {"WATER": water, "SURF": surf, "BEAM": beam, "WG1": mix((86, 170, 220), (168, 128, 74), self.turb),
+        wet = lambda i: "1.0" if self.p > core.PROBE_P[i] else "0.22"  # noqa: E731 - a probe lights up when the water is above it
+        rep = {"P1": wet(0), "P2": wet(1), "P3": wet(2), "WATER": water, "SURF": surf, "BEAM": beam, "WG1": mix((86, 170, 220), (168, 128, 74), self.turb),
                "WG2": mix((40, 110, 170), (104, 74, 40), self.turb), "DEBRIS": "%.2f" % self.debris, "LED": led,
                "PIPE": "%.1f" % (-36 * self.pipe_phase), "PIPE2": "%.1f" % (-36 * ((self.pipe_phase + 0.1) % 1.0)),
                "WET": ("%.2f" % (1.0 - 0.75 * (0.5 - 0.5 * math.cos(t * 2 * math.pi))) if self.rain else "0")}

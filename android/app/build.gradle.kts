@@ -11,8 +11,8 @@ android {
         applicationId = "com.techminds.flowbeacon"
         minSdk = 21            // Android 5.0 and newer
         targetSdk = 34
-        versionCode = 23
-        versionName = "2.0.3"
+        versionCode = 25
+        versionName = "2.0.5"
         resourceConfigurations += listOf("en")
     }
 

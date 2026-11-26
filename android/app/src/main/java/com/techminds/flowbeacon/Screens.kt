@@ -540,6 +540,7 @@ fun ConnectPage(vm: AppVm) {
     }
     UsbCard(vm)
     NeuCard(title = "SMS alerts") {
+        Sub("SMS is sent by the board. The Arduino Nano sketch has no GSM module, so this does nothing until you add one.")
         Row(verticalAlignment = Alignment.CenterVertically) {
             T("Send SMS alerts", Modifier.weight(1f))
             NeuSwitch(vm.smsOn, { vm.smsOn = it; vm.saveSms() })
@@ -587,7 +588,7 @@ fun CalibPage(vm: AppVm) {
             }
         }
         NeuButton("Reset thresholds", { vm.resetCfg() })
-        Sub("Turn a dial by dragging it. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically.")
+        Sub("Turn a dial by dragging it. The level sensor has three probes, so the water reads 15 cm (dry), 11 (low probe), 7 (mid probe) or 3 cm (high probe): Overflow risk 7 = mid probe, Overflow 3 = high probe. Tune them with normal-flow readings and partial-valve tests. Everything is saved automatically.")
     }
     LearnCards(vm)
 }
@@ -649,7 +650,7 @@ fun SettingsPage(vm: AppVm) {
     }
     SettingsExtras(vm)
     NeuCard(title = "About") {
-        T("FlowBeacon 2.0.3")
+        T("FlowBeacon 2.0.5")
         Sub("by TechMinds. Smart drainage monitoring and blockage prediction for the Arduino Nano prototype.")
         Sub("Switch between Consumer, Maintenance and Developer modes with the button in the top bar.")
     }

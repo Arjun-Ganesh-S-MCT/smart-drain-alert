@@ -6,7 +6,7 @@ import threading
 import urllib.request
 from pathlib import Path
 
-UA = "FlowBeacon/2.0.3 (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)"
+UA = "FlowBeacon/2.0.5 (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)"
 URL = "https://tile.openstreetmap.org/%d/%d/%d.png"
 CREDIT = "© OpenStreetMap contributors"
 MIN_Z, MAX_Z = 2, 18
