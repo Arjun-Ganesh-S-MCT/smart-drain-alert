@@ -649,7 +649,7 @@ fun SettingsPage(vm: AppVm) {
     }
     SettingsExtras(vm)
     NeuCard(title = "About") {
-        T("FlowBeacon 2.0.2")
+        T("FlowBeacon 2.0.3")
         Sub("by TechMinds. Smart drainage monitoring and blockage prediction for the Arduino Nano prototype.")
         Sub("Switch between Consumer, Maintenance and Developer modes with the button in the top bar.")
     }

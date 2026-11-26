@@ -9,7 +9,7 @@ class UpdateInfo(val current: String, val latest: String, val newer: Boolean, va
 
 /** Update check: asks GitHub for the latest release. Run it on a background thread. */
 object Updater {
-    const val VERSION = "2.0.2"
+    const val VERSION = "2.0.3"
     private const val REPO = "Arjun-Ganesh-S-MCT/smart-drain-alert"
 
     fun cmp(a: String, b: String): Int {

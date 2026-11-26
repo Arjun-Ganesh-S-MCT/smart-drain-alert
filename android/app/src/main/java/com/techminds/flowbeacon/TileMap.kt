@@ -45,7 +45,7 @@ import kotlin.math.tan
 
 /** Map tiles from OpenStreetMap (free, no key, no web view). Tiles are saved in the app cache, so seen places still show offline. */
 object Tiles {
-    const val UA = "FlowBeacon/2.0.2 (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)"
+    const val UA = "FlowBeacon/2.0.3 (+https://github.com/Arjun-Ganesh-S-MCT/smart-drain-alert)"
     const val CREDIT = "© OpenStreetMap contributors"
     const val MIN_Z = 2
     const val MAX_Z = 18

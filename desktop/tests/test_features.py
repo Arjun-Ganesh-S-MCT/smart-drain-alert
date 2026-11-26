@@ -107,7 +107,7 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(tamil.trans("Sound", "en"), "Sound")
         self.assertNotEqual(tamil.trans("Sound", "ta"), "Sound")
         self.assertGreater(updater.cmp("2.1.0", "2.0.9"), 0)
-        self.assertEqual(updater.cmp("2.0.2", "2.0.2"), 0)
+        self.assertEqual(updater.cmp("2.0.3", "2.0.3"), 0)
 
 
 class TilesTest(unittest.TestCase):
